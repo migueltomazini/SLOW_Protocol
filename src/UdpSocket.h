@@ -12,6 +12,8 @@
 #include <vector>
 #include <sys/socket.h> 
 #include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
 // Porta UDP para o protocolo SLOW
 const int SLOW_PORT = 7033;
@@ -25,7 +27,7 @@ public:
     bool bindSocket(int port);
 
     // Envia dados para um endereço e porta específicos
-    ssize_t sendTo(const std::vector<uint8_t>& data, const std::string& ip_address, int port);
+    ssize_t sendTo(const std::vector<uint8_t>& data, const std::string& host, int port);
 
     // Recebe dados
     ssize_t receive(std::vector<uint8_t>& buffer);
@@ -36,6 +38,9 @@ public:
 private:
     int sockfd;
     struct sockaddr_in server_addr;
+
+    // Resolve o nome do host
+    bool resolveHostname(const std::string& hostname, int port, struct sockaddr_in& addr_out);
 };
 
 #endif

@@ -1,0 +1,3 @@
+/home/mtomazini/Documents/GitHub/SLOW_Protocol/build/CMakeFiles/peripheral.dir
+/home/mtomazini/Documents/GitHub/SLOW_Protocol/build/CMakeFiles/edit_cache.dir
+/home/mtomazini/Documents/GitHub/SLOW_Protocol/build/CMakeFiles/rebuild_cache.dir

@@ -27,6 +27,8 @@ std::array<uint8_t, 16> Utils::generateUUIDv8() {
     // Define var com base nas normas da RFC9562
     // Localizado nos 2 bits mais significativos do octeto 8
     uuid[8] = (uuid[8] & 0x3F) | 0x80; // 0b10
+
+    return uuid;
 }
 
 std::array<uint8_t, 16> Utils::generateNilUUID() {
