@@ -1,181 +1,38 @@
-// main.cpp - VERSÃO DE TESTE E DEBUG
-//
-// Esta main foi projetada para testar as funcionalidades principais da aplicação.
-// Ela é dividida em seções que podem ser executadas para verificar:
-// 1. Funções utilitárias (Utils.h/.cpp)
-// 2. Serialização/Deserialização de pacotes (SlowPacket.h/.cpp)
-// 3. O fluxo completo de comunicação do Peripheral (requer um servidor Central)
-//
-// Para usar:
-// 1. Compile seu projeto normalmente.
-// 2. Execute o programa passando o IP e a Porta do servidor Central:
-//    ./seu_executavel <central_ip> <central_port>
-//
+// main.cpp - VERSÃO DE DEBUG AVANÇADO
+// Foco: Monitorar o estado do Periférico em tempo real.
 
 #include "Peripheral.h"
-#include "SlowPacket.h"
-#include "Utils.h"
-
 #include <iostream>
 #include <vector>
 #include <thread>
 #include <string>
-#include <cassert> // Para asserts simples nos testes
+#include <chrono>
 
-// --- Protótipos das Funções de Teste ---
+// Função para pausar a execução e aguardar o usuário.
+void press_enter_to_continue() {
+    std::cout << "\n[PAUSA] Pressione Enter para continuar..." << std::endl;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    std::cin.get();
+}
 
-void test_utils();
-void test_slow_packet();
-void test_peripheral_full_flow(int argc, char* argv[]);
+// NOVA FUNÇÃO: Imprime um relatório de status detalhado do periférico.
+void print_status(const Peripheral& p) {
+    std::cout << "---[ STATUS REPORT ]---" << std::endl;
+    std::cout << "  - Estado:         " << p.getStateAsString() << std::endl;
+    std::cout << "  - Session STTL:   " << p.getSessionSTTL() << std::endl;
+    std::cout << "  - Próximo SeqNum: " << p.getCurrentSeqNum() << std::endl;
+    std::cout << "  - Pacotes sem ACK:" << p.getUnackedPacketCount() << std::endl;
+    std::cout << "-----------------------" << std::endl;
+}
 
-// --- Função Principal ---
+void print_usage(const char* prog_name) {
+    std::cerr << "Uso: " << prog_name << " <central_ip> <central_port>" << std::endl;
+}
 
 int main(int argc, char* argv[]) {
-    std::cout << "========================================" << std::endl;
-    std::cout << "         INICIANDO SUITE DE TESTES        " << std::endl;
-    std::cout << "========================================" << std::endl;
-
-    // Teste 1: Funções Utilitárias
-    test_utils();
-
-    // Teste 2: Lógica de Pacotes
-    test_slow_packet();
-
-    // Teste 3: Fluxo Completo do Peripheral
-    // Este teste requer argumentos da linha de comando (IP e Porta)
-    test_peripheral_full_flow(argc, argv);
-
-    std::cout << "\n========================================" << std::endl;
-    std::cout << "         SUITE DE TESTES CONCLUÍDA        " << std::endl;
-    std::cout << "========================================" << std::endl;
-
-    return 0;
-}
-
-// --- Implementação das Funções de Teste ---
-
-/**
- * @brief Testa as funções auxiliares em Utils.cpp
- */
-void test_utils() {
-    std::cout << "\n--- [TESTE 1/3] EXECUTANDO TESTES DE UTILS ---\n" << std::endl;
-
-    // Teste de geração de UUID
-    std::cout << "[Utils] Testando geração de UUIDs..." << std::endl;
-    auto nil_uuid = Utils::generateNilUUID();
-    auto v8_uuid = Utils::generateUUIDv8();
-    Utils::printHex(std::vector<uint8_t>(nil_uuid.begin(), nil_uuid.end()), "Nil UUID (esperado: tudo 00)");
-    Utils::printHex(std::vector<uint8_t>(v8_uuid.begin(), v8_uuid.end()), "UUIDv8 (esperado: aleatório com bits de versão/variante corretos)");
-    std::cout << "------------------------------------------" << std::endl;
-
-    // Teste de conversão de Endianness
-    std::cout << "[Utils] Testando conversão de Endianness..." << std::endl;
-    uint32_t original32 = 0x12345678;
-    uint32_t little_endian32 = Utils::hostToLittleEndian32(original32);
-    uint32_t host32_again = Utils::littleEndianToHost32(little_endian32);
-
-    uint16_t original16 = 0xABCD;
-    uint16_t little_endian16 = Utils::hostToLittleEndian16(original16);
-    uint16_t host16_again = Utils::littleEndianToHost16(little_endian16);
-    
-    std::cout << std::hex; // Mudar para base hexadecimal para facilitar visualização
-    std::cout << "Original 32-bit: 0x" << original32 << " -> LE: 0x" << little_endian32 << " -> Host: 0x" << host32_again << std::endl;
-    std::cout << "Original 16-bit: 0x" << original16 << " -> LE: 0x" << little_endian16 << " -> Host: 0x" << host16_again << std::endl;
-    std::cout << std::dec; // Voltar para decimal
-
-    // Verificação
-    if (original32 == host32_again && original16 == host16_again) {
-        std::cout << "[PASSOU] Conversão de endianness é reversível." << std::endl;
-    } else {
-        std::cerr << "[FALHOU] Conversão de endianness NÃO é reversível." << std::endl;
-    }
-    
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    std::cout << "(Sistema é Big-Endian, valores foram trocados)" << std::endl;
-#else
-    std::cout << "(Sistema é Little-Endian, valores permaneceram iguais)" << std::endl;
-#endif
-    std::cout << "------------------------------------------" << std::endl;
-}
-
-/**
- * @brief Testa a criação, serialização e deserialização de um SlowPacket.
- */
-void test_slow_packet() {
-    std::cout << "\n--- [TESTE 2/3] EXECUTANDO TESTES DE SLOWPACKET ---\n" << std::endl;
-
-    SlowPacket original;
-    std::string test_payload_str = "Teste de Payload 123!";
-    std::vector<uint8_t> test_payload(test_payload_str.begin(), test_payload_str.end());
-
-    // 1. Preencher o pacote original com dados de teste
-    std::cout << "[SlowPacket] Montando pacote original com dados de teste..." << std::endl;
-    original.setSessionID(Utils::generateUUIDv8());
-    original.header.setSttl(12345);
-    original.header.setFlag(FLAG_CONNECT, true);
-    original.header.setFlag(FLAG_ACK, true);
-    original.header.setFlag(FLAG_MORE_BITS, false); // Explicitamente false
-    original.setSequenceNumber(98765);
-    original.setAcknowledgementNumber(54321);
-    original.setWindowSize(1024);
-    original.setFragmentID(42);
-    original.setFragmentOffset(5);
-    original.setData(test_payload);
-
-    // 2. Serializar o pacote
-    std::cout << "[SlowPacket] Serializando o pacote..." << std::endl;
-    std::vector<uint8_t> raw_bytes = original.serialize();
-    Utils::printHex(raw_bytes, "Bytes serializados");
-
-    // 3. Deserializar para um novo objeto
-    std::cout << "[SlowPacket] Deserializando os bytes para um novo pacote..." << std::endl;
-    SlowPacket deserialized;
-    if (!deserialized.deserialize(raw_bytes)) {
-        std::cerr << "[FALHOU] Falha crítica na deserialização do pacote." << std::endl;
-        return;
-    }
-
-    // 4. Verificar cada campo
-    std::cout << "[SlowPacket] Verificando a integridade dos dados..." << std::endl;
-    bool success = true;
-
-    auto check = [&](const std::string& field, bool condition) {
-        std::cout << "Verificando " << field << "... " << (condition ? "[PASSOU]" : "[FALHOU]") << std::endl;
-        if (!condition) success = false;
-    };
-
-    check("Session ID", deserialized.getSessionID() == original.getSessionID());
-    check("STTL", deserialized.header.getSttl() == 12345);
-    check("Flag CONNECT", deserialized.header.getFlag(FLAG_CONNECT) == true);
-    check("Flag ACK", deserialized.header.getFlag(FLAG_ACK) == true);
-    check("Flag REVIVE", deserialized.header.getFlag(FLAG_REVIVE) == false);
-    check("Flag MORE_BITS", deserialized.header.getFlag(FLAG_MORE_BITS) == false);
-    check("Sequence Number", deserialized.getSequenceNumber() == 98765);
-    check("Acknowledgement Number", deserialized.getAcknowledgementNumber() == 54321);
-    check("Window Size", deserialized.getWindowSize() == 1024);
-    check("Fragment ID", deserialized.getFragmentID() == 42);
-    check("Fragment Offset", deserialized.getFragmentOffset() == 5);
-    check("Payload Data", deserialized.getData() == test_payload);
-
-    std::cout << "------------------------------------------" << std::endl;
-    if (success) {
-        std::cout << "Resultado final: [SUCESSO TOTAL] O pacote foi serializado e deserializado corretamente." << std::endl;
-    } else {
-        std::cerr << "Resultado final: [FALHA] Alguns campos não corresponderam após a deserialização." << std::endl;
-    }
-}
-
-/**
- * @brief Testa o ciclo de vida completo do Peripheral.
- */
-void test_peripheral_full_flow(int argc, char* argv[]) {
-    std::cout << "\n--- [TESTE 3/3] EXECUTANDO TESTE DE FLUXO COMPLETO DO PERIPHERAL ---\n" << std::endl;
-
-    // 1. Validar os argumentos da linha de comando
     if (argc != 3) {
-        std::cerr << "[ERRO] Uso: " << argv[0] << " <central_ip> <central_port>" << std::endl;
-        std::cerr << "Este teste foi ignorado por falta de argumentos." << std::endl;
-        return;
+        print_usage(argv[0]);
+        return 1;
     }
 
     const std::string central_ip = argv[1];
@@ -184,60 +41,90 @@ void test_peripheral_full_flow(int argc, char* argv[]) {
         central_port = std::stoi(argv[2]);
     } catch (const std::exception& e) {
         std::cerr << "Erro: Porta inválida '" << argv[2] << "'" << std::endl;
-        return;
+        print_usage(argv[0]);
+        return 1;
     }
-    
-    std::cout << ">>> ATENÇÃO: Este teste requer um servidor Central rodando em "
-              << central_ip << ":" << central_port << " <<<" << std::endl;
+
+    std::cout << ">>> INICIANDO TESTE DE CONEXÃO E STTL <<<" << std::endl;
+    std::cout << "Conectando ao Central em " << central_ip << ":" << central_port << std::endl;
 
     try {
         Peripheral peripheral(central_ip, central_port);
-        
-        // 2. Iniciar a conexão (chama sendConnect() internamente)
-        std::cout << "\n[PASSO 1] Tentando iniciar conexão..." << std::endl;
+
+        // ETAPA 1: INICIAR CONEXÃO
+        std::cout << "\n--- ETAPA 1: Iniciando conexão ---" << std::endl;
         if (!peripheral.start()) {
-            std::cerr << "[FALHOU] Não foi possível iniciar o Peripheral. Verifique se o servidor está rodando ou se há um problema de rede." << std::endl;
-            return;
+            return 1;
         }
 
-        // 3. Criar a thread de rede para escutar as respostas
-        std::cout << "[PASSO 2] Iniciando thread de rede para escutar respostas do Central..." << std::endl;
         std::thread network_thread([&peripheral]() {
             peripheral.run();
         });
 
-        // Um pequeno delay para dar tempo ao handshake de acontecer.
-        std::cout << "[PASSO 3] Aguardando handshake (2 segundos)..." << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::cout << "Aguardando handshake (3 segundos)..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(3));
         
-        std::cout << "\n>>> DICA: Se a conexão falhar, procure por 'Timeout! Retransmitindo pacote com seq=0' no console." << std::endl;
-        std::cout << ">>> Isso indica que o teste de retransmissão do pacote CONNECT está funcionando." << std::endl;
+        std::cout << "\n>>> Verificando estado PÓS-HANDSHAKE:" << std::endl;
+        print_status(peripheral);
+        press_enter_to_continue();
 
-
-        // 4. Enviar dados de teste (pacote único)
-        std::cout << "\n[PASSO 4] Enviando um pacote de dados simples..." << std::endl;
-        std::string message = "Ola mundo, este eh um teste do protocolo SLOW!";
+        // ETAPA 2: ENVIAR DADOS SIMPLES E MONITORAR
+        std::cout << "\n--- ETAPA 2: Enviando um pacote de dados simples e iniciando monitoramento ---" << std::endl;
+        std::string message = "Teste com STTL da sessao.";
         std::vector<uint8_t> data_to_send(message.begin(), message.end());
+        
+        std::cout << ">>> Estado ANTES de enviar dados:" << std::endl;
+        print_status(peripheral);
+
         peripheral.sendData(data_to_send);
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        
+        std::cout << "\n>>> Pacote enviado. Iniciando ciclo de monitoramento por 12 segundos." << std::endl;
+        std::cout << ">>> Observe os logs da thread de rede e as mudanças no STATUS REPORT." << std::endl;
 
-        // 5. Enviar dados que precisam de fragmentação
-        std::cout << "\n[PASSO 5] Enviando dados grandes para testar a fragmentação (2000 bytes)..." << std::endl;
-        std::vector<uint8_t> large_data(2000, 'A');
+        bool ack_received = false;
+        for (int i = 0; i < 12; ++i) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::cout << "\n(Monitoramento: T+" << i + 1 << "s)" << std::endl;
+            print_status(peripheral);
+
+            // Se a fila de pacotes sem ACK ficou vazia, o ACK foi recebido!
+            if (peripheral.getUnackedPacketCount() == 0) {
+                std::cout << ">>> SUCESSO! O ACK foi recebido e processado." << std::endl;
+                ack_received = true;
+                break;
+            }
+        }
+        
+        if (!ack_received) {
+             std::cout << "\n>>> FALHA! O ACK não foi recebido no tempo esperado. O timeout deve ter ocorrido." << std::endl;
+        }
+
+        press_enter_to_continue();
+
+        // ETAPA 3: ENVIAR DADOS FRAGMENTADOS
+        std::cout << "\n--- ETAPA 3: Enviando dados para fragmentação ---" << std::endl;
+        std::vector<uint8_t> large_data(1500, 'B');
         peripheral.sendData(large_data);
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::cout << "Aguardando 5 segundos para processamento dos fragmentos..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+        print_status(peripheral);
+        press_enter_to_continue();
 
-        // 6. Desconectar
-        std::cout << "\n[PASSO 6] Enviando pedido de desconexão..." << std::endl;
+        // ETAPA 4: DESCONECTAR
+        std::cout << "\n--- ETAPA 4: Enviando pedido de desconexão ---" << std::endl;
         peripheral.sendDisconnect();
+        
+        std::cout << "Aguardando finalização da thread de rede..." << std::endl;
+        if(network_thread.joinable()) {
+            network_thread.join();
+        }
 
-        // 7. Esperar a thread de rede terminar seu trabalho
-        std::cout << "[PASSO 7] Aguardando a thread de rede finalizar..." << std::endl;
-        network_thread.join();
-
-        std::cout << "\n[SUCESSO] Fluxo completo do Peripheral executado com sucesso." << std::endl;
+        std::cout << "\n>>> TESTE CONCLUÍDO <<<" << std::endl;
 
     } catch (const std::exception& e) {
-        std::cerr << "[FALHOU] Erro inesperado durante o teste de fluxo: " << e.what() << std::endl;
+        std::cerr << "Erro inesperado na aplicação: " << e.what() << std::endl;
+        return 1;
     }
+
+    return 0;
 }

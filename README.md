@@ -51,7 +51,7 @@ O executável `peripheral` requer dois argumentos de linha de comando: o endere�
 2.  **Execute o Peripheral:**
     Para testar seu peripheral, você usará o central fornecido pelo enunciado do trabalho, que está disponível em `slow.gmelodie.com` na porta `7033`.
     ```bash
-    ./peripheral slow.gmelodie.com 7033
+    ./peripheral 142.93.184.175 7033
     ```
     Ao executar, o peripheral tentará iniciar uma conexão 3-way com o central e processar as mensagens conforme o protocolo SLOW.
 

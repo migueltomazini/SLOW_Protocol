@@ -12,25 +12,36 @@
 
 // --- Implementação dos métodos da struct SlowHeader ---
 
-// sttl ocupa os 27 bits inferiores (0-26)
-const uint32_t STTL_MASK = 0x07FFFFFF;
-// As flags ocupam os 5 bits superiores (27-31)
-const uint32_t FLAGS_MASK = 0xF8000000;
+// --- NOVAS MÁSCARAS ---
+// As flags ocupam os 5 bits inferiores (0-4)
+const uint32_t FLAGS_MASK = 0x0000001F; // (binário ...00011111)
+// sttl ocupa os 27 bits superiores (5-31)
+// A máscara é o inverso da FLAGS_MASK
+const uint32_t STTL_MASK = ~FLAGS_MASK; // (binário ...11100000)
+
+// --- NOVAS IMPLEMENTAÇÕES ---
 
 void SlowHeader::setSttl(uint32_t sttl) {
-    // Preserva as flags atuais (nos bits superiores)
-    uint32_t current_flags = sttl_and_flags & FLAGS_MASK;
-    // Define o novo sttl, garantindo que ele não ultrapasse 27 bits, e combina com as flags.
-    sttl_and_flags = (sttl & STTL_MASK) | current_flags;
+    // 1. Limpa os bits antigos do STTL, mantendo as flags intactas.
+    //    (sttl_and_flags & FLAGS_MASK) isola apenas os 5 bits das flags.
+    uint32_t flags_only = sttl_and_flags & FLAGS_MASK;
+
+    // 2. Prepara o novo valor do STTL, já deslocado para a posição correta.
+    //    Garante que o valor de sttl não exceda os 27 bits permitidos.
+    uint32_t sttl_part = (sttl << 5) & STTL_MASK;
+
+    // 3. Combina as flags existentes com o novo STTL.
+    sttl_and_flags = flags_only | sttl_part;
 }
 
 uint32_t SlowHeader::getSttl() const {
-    // Extrai os 27 bits inferiores
-    return sttl_and_flags & STTL_MASK;
+    // Extrai os 27 bits superiores e desloca de volta para a direita.
+    return (sttl_and_flags & STTL_MASK) >> 5;
 }
 
 void SlowHeader::setFlag(SlowFlags flag, bool value) {
-    // Liga ou desliga o bit específico da flag
+    // A lógica de ligar/desligar bit continua a mesma, mas agora opera
+    // nos bits inferiores.
     if (value) {
         sttl_and_flags |= flag;
     } else {
@@ -39,7 +50,7 @@ void SlowHeader::setFlag(SlowFlags flag, bool value) {
 }
 
 bool SlowHeader::getFlag(SlowFlags flag) const {
-    // Verifica se o bit da flag está ativo
+    // A lógica de verificação continua a mesma.
     return (sttl_and_flags & flag) != 0;
 }
 
@@ -166,4 +177,8 @@ void SlowPacket::setData(const std::vector<uint8_t>& data_bytes) {
 
 const std::vector<uint8_t>& SlowPacket::getData() const {
     return data;
+}
+
+uint32_t SlowPacket::getSttl() const {
+    return header.getSttl();
 }

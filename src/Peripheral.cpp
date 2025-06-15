@@ -1,14 +1,15 @@
 // ... (comentários iniciais) ...
 
 #include "Peripheral.h"
+#include "SlowPacket.h"
 #include "Utils.h"
 #include <iostream>
 #include <thread>
 #include <algorithm> // ADICIONADO: Para std::remove_if
 
 // ... (constantes de configuração) ...
-const uint16_t LOCAL_RECEIVE_BUFFER_SIZE = 65535; 
-const auto RETRANSMISSION_TIMEOUT = std::chrono::milliseconds(500);
+const uint16_t LOCAL_RECEIVE_BUFFER_SIZE = 1024; 
+const auto RETRANSMISSION_TIMEOUT = std::chrono::milliseconds(1000);
 const auto LOOP_INTERVAL = std::chrono::milliseconds(10);
 
 Peripheral::Peripheral(const std::string& central_ip, int central_port)
@@ -16,9 +17,10 @@ Peripheral::Peripheral(const std::string& central_ip, int central_port)
       central_port(central_port),
       current_state(DISCONNECTED),
       current_seqnum(0),
-      last_acknum_received(0),
+      last_seqnum_from_central(0),
       remote_window_size(0),
-      local_window_size(LOCAL_RECEIVE_BUFFER_SIZE)
+      local_window_size(LOCAL_RECEIVE_BUFFER_SIZE),
+      session_sttl(0)
 {
     session_id = Utils::generateNilUUID();
 }
@@ -102,8 +104,9 @@ bool Peripheral::sendData(const std::vector<uint8_t>& data_payload) {
                 fragment_packet.header.setFlag(FLAG_MORE_BITS, true);
             }
 
+            fragment_packet.header.setSttl(session_sttl);
             fragment_packet.setSequenceNumber(current_seqnum++);
-            fragment_packet.setAcknowledgementNumber(last_acknum_received);
+            fragment_packet.setAcknowledgementNumber(last_seqnum_from_central);
             fragment_packet.setWindowSize(local_window_size);
             fragment_packet.setFragmentID(fid);
             fragment_packet.setFragmentOffset(fo++);
@@ -123,14 +126,23 @@ bool Peripheral::sendData(const std::vector<uint8_t>& data_payload) {
         // ... (configuração do pacote de dados) ...
         data_packet.setSessionID(session_id);
         data_packet.header.setFlag(FLAG_ACK, true);
+
+
         data_packet.setSequenceNumber(current_seqnum++);
-        data_packet.setAcknowledgementNumber(last_acknum_received);
+        data_packet.setAcknowledgementNumber(last_seqnum_from_central);
         data_packet.setWindowSize(local_window_size);
         data_packet.setData(data_payload);
+        data_packet.header.setSttl(session_sttl);
+
         
-        // push_back correto
         unacked_packets.push_back({data_packet, std::chrono::steady_clock::now()});
         auto raw_packet = data_packet.serialize();
+    
+
+        // --- LINHA ADICIONADA PARA DEBUG ---
+        Utils::printHex(raw_packet, "DEBUG: Pacote DATA (simples) saindo");
+        // ------------------------------------
+
         udp_socket.sendTo(raw_packet, central_ip, central_port);
         std::cout << "Pacote de dados (seq=" << data_packet.getSequenceNumber() << ") enviado." << std::endl;
     }
@@ -148,8 +160,9 @@ bool Peripheral::sendDisconnect() {
     disconnect_packet.header.setFlag(FLAG_CONNECT, true);
     disconnect_packet.header.setFlag(FLAG_REVIVE, true);
     disconnect_packet.header.setFlag(FLAG_ACK, true);
+    disconnect_packet.header.setSttl(session_sttl);
     disconnect_packet.setSequenceNumber(current_seqnum++);
-    disconnect_packet.setAcknowledgementNumber(last_acknum_received);
+    disconnect_packet.setAcknowledgementNumber(last_seqnum_from_central);
     disconnect_packet.setWindowSize(0);
 
     // push_back correto
@@ -189,6 +202,10 @@ void Peripheral::run() {
 }
 
 void Peripheral::processReceivedPacket(const std::vector<uint8_t>& raw_packet) {
+    // --- LINHA ADICIONADA PARA DEBUG ---
+    Utils::printHex(raw_packet, "DEBUG: Pacote BRUTO recebido do Central");
+    // ------------------------------------
+    
     SlowPacket packet;
     if (!packet.deserialize(raw_packet)) {
         std::cerr << "Falha ao deserializar pacote recebido. Ignorando." << std::endl;
@@ -237,22 +254,33 @@ void Peripheral::processReceivedPacket(const std::vector<uint8_t>& raw_packet) {
 
 void Peripheral::handleSetupResponse(const SlowPacket& packet) {
     // O pacote de Setup (Accept) confirma nossa conexão.
-    std::cout << "Conexão aceita pelo central!" << std::endl;
+    std::cout << "STTL recebido do central: " << packet.getSttl() << std::endl;
     
+    uint32_t received_seq = packet.getSequenceNumber();
+    uint32_t received_ack = packet.getAcknowledgementNumber();
+
+    // --- NOVO DEBUG CRÍTICO ---
+    std::cout << "[DEBUG] handleSetupResponse: "
+              << "Recebido SeqNum=" << received_seq
+              << ", Recebido AckNum=" << received_ack << std::endl;
+
     current_state = CONNECTED;
     session_id = packet.getSessionID();
     remote_window_size = packet.getWindowSize();
+    session_sttl = packet.getSttl();
     
     // O seqnum do pacote de setup é o primeiro da sessão (geralmente 0 ou 1).
     // O próximo pacote que recebermos do central deve ter um seqnum maior.
     // O acknum do setup confirma o nosso pacote de connect (seq=0).
-    last_acknum_received = packet.getSequenceNumber();
+    last_seqnum_from_central = packet.getSequenceNumber();
 
     // Nosso próximo número de sequência será 1.
-    current_seqnum = 1; 
+    current_seqnum = packet.getSequenceNumber() + 1; 
 
     // O pacote de connect (seq=0) foi confirmado. Limpamos a fila de retransmissão.
     unacked_packets.clear();
+
+    sendConnectAck(packet);
 
     std::cout << "Sessão estabelecida. SID recebido. Janela do Central: " << remote_window_size << std::endl;
 }
@@ -269,7 +297,7 @@ void Peripheral::handleAckResponse(const SlowPacket& packet) {
     uint32_t acknum = packet.getAcknowledgementNumber();
     
     remote_window_size = packet.getWindowSize();
-    //last_acknum_received = packet.getSequenceNumber();
+    last_seqnum_from_central = packet.getSequenceNumber();
 
     // MODIFICADO: Agora acessamos unacked.packet para pegar o pacote
     unacked_packets.erase(
@@ -300,4 +328,61 @@ void Peripheral::handleRetransmission() {
             unacked.time_sent = now;
         }
     }
+}
+
+std::string Peripheral::getStateAsString() const {
+    switch (current_state) {
+        case DISCONNECTED:  return "DISCONNECTED";
+        case CONNECTING:    return "CONNECTING";
+        case CONNECTED:     return "CONNECTED";
+        case DISCONNECTING: return "DISCONNECTING";
+        default:            return "UNKNOWN";
+    }
+}
+
+bool Peripheral::isConnected() const {
+    return current_state == CONNECTED;
+}
+
+uint32_t Peripheral::getSessionSTTL() const {
+    return session_sttl;
+}
+
+uint32_t Peripheral::getCurrentSeqNum() const {
+    return current_seqnum;
+}
+
+size_t Peripheral::getUnackedPacketCount() const {
+    return unacked_packets.size();
+}
+
+void Peripheral::sendConnectAck(const SlowPacket& packet) {
+    std::cout << "[DEBUG] Enviando 3ª via do handshake (puro ACK)..." << std::endl;
+    
+    SlowPacket ack_packet;
+    ack_packet.setSessionID(session_id);    // Usa o SID que acabamos de receber
+    ack_packet.header.setSttl(session_sttl); // Usa o STTL da sessão
+
+    // Flags: Apenas a flag ACK. Este pacote apenas confirma o recebimento do Setup.
+    ack_packet.header.setFlag(FLAG_ACK, true);
+    
+    // SeqNum: Conforme o TCP, nosso seqnum avança. Se o Connect foi 0, este é 1.
+    ack_packet.setSequenceNumber(packet.getSequenceNumber() + 1);
+
+    // AckNum: Conforme o TCP, confirmamos o seqnum do servidor (ISN_S) com ISN_S + 1.
+    ack_packet.setAcknowledgementNumber(last_seqnum_from_central);
+    
+    ack_packet.setWindowSize(local_window_size);
+    // IMPORTANTE: Este é um pacote de puro controle, sem dados (payload).
+
+    // Este pacote consome o seqnum=1. O próximo pacote (o primeiro de DADOS) usará seq=2.
+    current_seqnum = packet.getSequenceNumber() + 2;
+
+    // Colocamos na fila de retransmissão para garantir que o servidor o receba
+    // e estabeleça a conexão. O servidor pode responder com um ACK para este pacote.
+    // unacked_packets.push_back({ack_packet, std::chrono::steady_clock::now()});
+
+    auto raw_packet = ack_packet.serialize();
+    Utils::printHex(raw_packet, "DEBUG: Pacote Connect-ACK saindo");
+    udp_socket.sendTo(raw_packet, central_ip, central_port);
 }

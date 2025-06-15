@@ -42,6 +42,13 @@ public:
     bool sendData(const std::vector<uint8_t>& data_payload);
     bool sendDisconnect();
 
+    // --- NOVOS GETTERS PARA DEBUG ---
+    std::string getStateAsString() const;
+    bool isConnected() const;
+    uint32_t getSessionSTTL() const;
+    uint32_t getCurrentSeqNum() const;
+    size_t getUnackedPacketCount() const;
+
 private:
     UdpSocket udp_socket;
     std::string central_ip;
@@ -52,7 +59,7 @@ private:
     uint32_t session_sttl; // ADICIONADO: Para armazenar o TTL da sessão 
 
     uint32_t current_seqnum;
-    uint32_t last_acknum_received;
+    uint32_t last_seqnum_from_central;
     uint16_t remote_window_size;
     uint16_t local_window_size;
 
@@ -64,6 +71,7 @@ private:
     void handleAckResponse(const SlowPacket& packet);
     void handleFailedResponse(const SlowPacket& packet);
     void handleRetransmission();
+    void sendConnectAck(const SlowPacket& packet);
 };
 
 #endif

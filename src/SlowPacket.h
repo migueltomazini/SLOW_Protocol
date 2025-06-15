@@ -19,11 +19,11 @@ const uint16_t MAX_SLOW_DATA_SIZE = 1440;
 
 // Flags SLOW (5 bits)
 enum SlowFlags : uint32_t { // Precisa ser uint32_t para conter os valores
-    FLAG_CONNECT       = 1 << 27, // C está no bit 24
-    FLAG_REVIVE        = 1 << 28, // R está no bit 25
-    FLAG_ACK           = 1 << 29, // ACK está no bit 26
-    FLAG_ACCEPT_REJECT = 1 << 30, // A/R está no bit 27
-    FLAG_MORE_BITS     = 1U << 31  // MB está no bit 28
+    FLAG_CONNECT       = 1 << 4,
+    FLAG_REVIVE        = 1 << 3,
+    FLAG_ACK           = 1 << 2, 
+    FLAG_ACCEPT_REJECT = 1 << 1,
+    FLAG_MORE_BITS     = 1 << 0
 };
 
 // Estrutura do cabeçalho do pacote SLOW
@@ -81,6 +81,8 @@ public:
 
     void setData(const std::vector<uint8_t>& data_bytes);
     const std::vector<uint8_t>& getData() const;
+
+    uint32_t getSttl() const;
 };
 
 #endif
