@@ -9,6 +9,7 @@
 #include <array>
 #include <cstdint>
 #include <vector>
+#include <iostream>
 
 namespace Utils {
     // Gera um UUIDv8 conforme RFC9562.
@@ -24,6 +25,11 @@ namespace Utils {
     uint16_t littleEndianToHost16(uint16_t le_val);
     uint32_t hostToLittleEndian32(uint32_t host_val);
     uint32_t littleEndianToHost32(uint32_t le_val);
+
+    uint8_t reverseBits(uint8_t b);
+
+    // ... no final do namespace Utils
+    void printHex(const std::vector<uint8_t>& data, const std::string& label);
 };
 
 #endif 

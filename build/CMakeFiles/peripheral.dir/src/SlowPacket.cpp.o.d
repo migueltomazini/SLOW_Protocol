@@ -60,18 +60,17 @@ CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o: \
  /usr/include/c++/15/bits/uses_allocator_args.h /usr/include/c++/15/tuple \
  /usr/include/c++/15/array /usr/include/c++/15/compare \
  /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/Utils.h \
- /usr/include/c++/15/cstring /usr/include/string.h \
- /usr/include/bits/types/locale_t.h /usr/include/bits/types/__locale_t.h \
- /usr/include/strings.h /usr/include/c++/15/iostream \
- /usr/include/c++/15/ostream /usr/include/c++/15/bits/ostream.h \
- /usr/include/c++/15/ios /usr/include/c++/15/iosfwd \
- /usr/include/c++/15/bits/stringfwd.h /usr/include/c++/15/bits/postypes.h \
- /usr/include/c++/15/cwchar /usr/include/wchar.h \
- /usr/include/bits/floatn.h /usr/include/bits/floatn-common.h \
+ /usr/include/c++/15/iostream /usr/include/c++/15/ostream \
+ /usr/include/c++/15/bits/ostream.h /usr/include/c++/15/ios \
+ /usr/include/c++/15/iosfwd /usr/include/c++/15/bits/stringfwd.h \
+ /usr/include/c++/15/bits/postypes.h /usr/include/c++/15/cwchar \
+ /usr/include/wchar.h /usr/include/bits/floatn.h \
+ /usr/include/bits/floatn-common.h \
  /usr/lib/gcc/x86_64-redhat-linux/15/include/stdarg.h \
  /usr/include/bits/types/wint_t.h /usr/include/bits/types/mbstate_t.h \
  /usr/include/bits/types/__mbstate_t.h /usr/include/bits/types/__FILE.h \
- /usr/include/bits/types/FILE.h /usr/include/c++/15/exception \
+ /usr/include/bits/types/FILE.h /usr/include/bits/types/locale_t.h \
+ /usr/include/bits/types/__locale_t.h /usr/include/c++/15/exception \
  /usr/include/c++/15/bits/exception_ptr.h \
  /usr/include/c++/15/bits/cxxabi_init_exception.h \
  /usr/include/c++/15/typeinfo /usr/include/c++/15/bits/nested_exception.h \
@@ -146,4 +145,5 @@ CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o: \
  /usr/include/c++/15/bits/locale_facets.tcc \
  /usr/include/c++/15/bits/basic_ios.tcc \
  /usr/include/c++/15/bits/ostream.tcc /usr/include/c++/15/istream \
- /usr/include/c++/15/bits/istream.tcc
+ /usr/include/c++/15/bits/istream.tcc /usr/include/c++/15/cstring \
+ /usr/include/string.h /usr/include/strings.h

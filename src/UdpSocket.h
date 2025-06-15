@@ -14,6 +14,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <chrono> // Apagar depois
 
 // Porta UDP para o protocolo SLOW
 const int SLOW_PORT = 7033;
@@ -35,6 +36,8 @@ public:
     // Recebe dados de um endereço e porta específicos
     ssize_t receiveFrom(std::vector<uint8_t>& buffer, std::string& sender_ip, int& sender_port);
 
+    // Define timeout
+    bool setReceiveTimeout(int seconds, int microseconds);
 private:
     int sockfd;
     struct sockaddr_in server_addr;

@@ -1,142 +1,168 @@
 // UdpSocket.cpp
-// Este arquivo implementa as funcionalidades da classe UdpSocket.
-// Ele contém o código para as chamadas de sistema POSIX (sockets) que permitem
-// a comunicação UDP, como `socket()`, `bind()`, `sendto()` e `recvfrom()`.
-// Garante que o peripheral possa enviar e receber pacotes SLOW
-// através da rede, usando a porta UDP/7033 conforme especificado.
+// Este arquivo implementa a classe UdpSocket, fornecendo a funcionalidade
+// de comunicação UDP. Ele encapsula as chamadas de sistema de baixo nível
+// para criar, ligar, enviar e receber dados em um socket UDP, tornando a
+// interação com a rede mais simples e orientada a objetos para o resto da aplicação.
 
 #include "UdpSocket.h"
-#include "SlowPacket.h"
-#include <iostream>  
-#include <cstring>
-#include <unistd.h>
+#include <iostream>   // Para std::cerr (saída de erro)
+#include <unistd.h>   // Para close()
+#include <cstring>    // Para memset() e memcpy()
 
-// Construtor da classe UdpSocket.
-// Inicializa o descritor de arquivo do socket como -1 (inválido) por padrão.
-UdpSocket::UdpSocket() : sockfd(-1) {}
+UdpSocket::UdpSocket() : sockfd(-1) {
+    // O construtor inicializa o file descriptor do socket como -1,
+    // um valor inválido que indica que o socket ainda não foi criado.
+    // Isso nos permite verificar facilmente se o socket está aberto.
+    memset(&server_addr, 0, sizeof(server_addr));
+}
 
-// Destrutor da classe UdpSocket.
-// Garante que o socket seja fechado se estiver aberto, liberando recursos.
 UdpSocket::~UdpSocket() {
+    // O destrutor garante que, se o socket foi aberto (sockfd != -1),
+    // ele seja fechado para liberar os recursos do sistema operacional.
+    // Isso evita "resource leaks".
     if (sockfd != -1) {
         close(sockfd);
-        std::cout << "Socket UDP fechado." << std::endl;
     }
 }
 
-/**
- * @brief Cria e liga o socket UDP a uma porta específica na máquina local.
- * Este é o passo necessário para o socket poder receber dados.
- * @param port A porta UDP para a qual o socket será ligado (ex: 7033 para o SLOW Protocol).
- * @return true se o socket foi criado e ligado com sucesso, false caso contrário.
- */
 bool UdpSocket::bindSocket(int port) {
-    // Cria um socket UDP.
+    // 1. Criar o descritor de arquivo do socket
+    // AF_INET: para a família de endereços IPv4.
+    // SOCK_DGRAM: para o protocolo UDP (datagramas).
+    // 0: protocolo padrão para SOCK_DGRAM, que é UDP.
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0) {
-        std::cerr << "Erro ao criar socket UDP." << std::endl;
+        std::cerr << "Erro ao criar socket" << std::endl;
         return false;
     }
+    
+    // Configurar o endereço para o qual vamos ligar (bind) o socket
+    struct sockaddr_in local_addr;
+    memset(&local_addr, 0, sizeof(local_addr));
+    local_addr.sin_family = AF_INET;
+    // INADDR_ANY: aceita conexões de qualquer interface de rede da máquina.
+    local_addr.sin_addr.s_addr = INADDR_ANY;
+    // htons (host to network short): converte o número da porta para a ordem de bytes da rede.
+    local_addr.sin_port = htons(port);
 
-    // Prepara a estrutura de endereço do servidor (máquina local).
-    std::memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;       
-    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    server_addr.sin_port = htons(port);
-
-    // Liga o socket à porta e endereço definidos.
-    if (bind(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        std::cerr << "Erro ao ligar socket à porta " << port << ". Verifique se a porta está em uso." << std::endl;
-        close(sockfd); 
+    // 2. Ligar (bind) o socket a um endereço e porta
+    // Isso é necessário para poder receber pacotes em uma porta específica.
+    if (bind(sockfd, (struct sockaddr *)&local_addr, sizeof(local_addr)) < 0) {
+        std::cerr << "Erro ao fazer bind do socket na porta " << port << std::endl;
+        close(sockfd); // Limpa o socket se o bind falhar
         sockfd = -1;
         return false;
     }
-    return true; 
+
+    return true;
 }
 
-/**
- * @brief Resolve um nome de host (ou endereço IP) para uma estrutura de endereço de socket (sockaddr_in).
- * Esta função utiliza o sistema DNS para converter nomes de domínio em endereços IP,
- * @param hostname A string contendo o nome do host (ex: "slow.gmelodie.com") ou um endereço IP literal (ex: "127.0.0.1").
- * @param port A porta numérica associada ao host para a qual o endereço será configurado.
- * @param addr_out Uma referência para a estrutura `sockaddr_in` onde o endereço resolvido será armazenado.
- * @return true se o nome do host foi resolvido com sucesso e a estrutura `addr_out` foi preenchida, false caso contrário.
- */
+// Implementação do helper privado para resolver o nome do host
 bool UdpSocket::resolveHostname(const std::string& hostname, int port, struct sockaddr_in& addr_out) {
-    struct addrinfo hints, *servinfo, *p;
-    int rv;
+    // gethostbyname é uma função que converte um nome de host (ex: "slow.gmelodie.com")
+    // em uma estrutura que contém seu endereço IP.
+    struct hostent* host_entry = gethostbyname(hostname.c_str());
+    if (host_entry == nullptr) {
+        std::cerr << "Erro: não foi possível resolver o hostname '" << hostname << "'" << std::endl;
+        return false;
+    }
+    
+    // Preenche a estrutura sockaddr_in com as informações do destino
+    addr_out.sin_family = AF_INET;
+    // Copia o endereço IP resolvido para a estrutura de endereço.
+    memcpy(&addr_out.sin_addr, host_entry->h_addr_list[0], host_entry->h_length);
+    addr_out.sin_port = htons(port);
+    
+    return true;
+}
 
-    std::memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;   
-    hints.ai_socktype = SOCK_DGRAM; 
 
-    // Tenta resolver o nome do host.
-    if ((rv = getaddrinfo(hostname.c_str(), std::to_string(port).c_str(), &hints, &servinfo)) != 0) {
-        std::cerr << "Erro ao resolver host '" << hostname << "': " << gai_strerror(rv) << std::endl;
+ssize_t UdpSocket::sendTo(const std::vector<uint8_t>& data, const std::string& host, int port) {
+    if (sockfd == -1) {
+        std::cerr << "Erro: socket não está inicializado para envio." << std::endl;
+        return -1;
+    }
+    
+    struct sockaddr_in dest_addr;
+    // Resolve o hostname para obter o endereço IP do destino
+    if (!resolveHostname(host, port, dest_addr)) {
+        return -1;
+    }
+
+    // sendto: envia os dados para o destino especificado.
+    // data.data(): ponteiro para os dados do vector.
+    // data.size(): tamanho dos dados a serem enviados.
+    // 0: flags (nenhuma especial neste caso).
+    ssize_t bytes_sent = sendto(sockfd, data.data(), data.size(), 0, 
+                                (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+    
+    if (bytes_sent < 0) {
+        std::cerr << "Erro ao enviar dados para " << host << ":" << port << std::endl;
+    }
+    
+    return bytes_sent;
+}
+
+ssize_t UdpSocket::receive(std::vector<uint8_t>& buffer) {
+     if (sockfd == -1) {
+        std::cerr << "Erro: socket não está ligado para recebimento." << std::endl;
+        return -1;
+    }
+    // recv: é uma chamada bloqueante que espera até que dados cheguem no socket.
+    // O buffer deve ter tamanho suficiente para receber o maior pacote esperado.
+    // O valor retornado é o número de bytes recebidos.
+    ssize_t bytes_received = recv(sockfd, buffer.data(), buffer.size(), 0);
+
+    if (bytes_received < 0) {
+        std::cerr << "Erro ao receber dados." << std::endl;
+    }
+
+    return bytes_received;
+}
+
+bool UdpSocket::setReceiveTimeout(int seconds, int microseconds) {
+    if (sockfd == -1) {
         return false;
     }
 
-    for(p = servinfo; p != NULL; p = p->ai_next) {
-        std::memcpy(&addr_out, p->ai_addr, p->ai_addrlen);
-        break; 
+    struct timeval timeout;
+    timeout.tv_sec = seconds;
+    timeout.tv_usec = microseconds;
+
+    // SO_RCVTIMEO é a opção de socket para definir o timeout de recebimento
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+        std::cerr << "Erro ao configurar o timeout do socket" << std::endl;
+        return false;
     }
-
-    freeaddrinfo(servinfo);
-    return p != NULL;
+    return true;
 }
 
 
-/**
- * @brief Envia um vetor de bytes (dados) para um endereço IP e porta de destino específicos.
- * @param data O vetor de bytes a ser enviado.
- * @param host A string contendo o host do endereço.
- * @param port A porta UDP do destino.
- * @return O número de bytes enviados em caso de sucesso, ou -1 em caso de erro.
- */
-ssize_t UdpSocket::sendTo(const std::vector<uint8_t>& data, const std::string& host_or_ip, int port) {
-    struct sockaddr_in dest_addr;
-    // Tenta resolver o nome do host/IP.
-    if (!resolveHostname(host_or_ip, port, dest_addr)) {
-        return -1; 
-    }
-
-    return sendto(sockfd, data.data(), data.size(), 0, (struct sockaddr*)&dest_addr, sizeof(dest_addr));
-}
-
-/**
- * @brief Recebe dados de qualquer remetente através do socket UDP.
- * @param buffer Um vetor de bytes onde os dados recebidos serão armazenados.
- * @return O número de bytes recebidos em caso de sucesso, 0 se não houver dados, ou -1 em caso de erro.
- */
-ssize_t UdpSocket::receive(std::vector<uint8_t>& buffer) {
-    // Redimensiona o buffer para o tamanho máximo esperado de um pacote SLOW.
-    buffer.resize(MAX_SLOW_PACKET_SIZE);
-    return recv(sockfd, buffer.data(), buffer.size(), 0);
-}
-
-/**
- * @brief Recebe dados de qualquer remetente através do socket UDP, e também obtém
- * o endereço IP e a porta do remetente.
- * @param buffer Um vetor de bytes onde os dados recebidos serão armazenados.
- * @param sender_ip Uma string que será preenchida com o endereço IP do remetente.
- * @param sender_port Um inteiro que será preenchido com a porta do remetente.
- * @return O número de bytes recebidos em caso de sucesso, 0 se não houver dados, ou -1 em caso de erro.
- */
 ssize_t UdpSocket::receiveFrom(std::vector<uint8_t>& buffer, std::string& sender_ip, int& sender_port) {
-    // Redimensiona o buffer para o tamanho máximo esperado de um pacote SLOW.
-    buffer.resize(MAX_SLOW_PACKET_SIZE);
+    if (sockfd == -1) {
+        std::cerr << "Erro: socket não está ligado para recebimento." << std::endl;
+        return -1;
+    }
+
+    // ADICIONADO: Declaração das variáveis que estavam faltando
     struct sockaddr_in sender_addr;
     socklen_t addr_len = sizeof(sender_addr);
-
-    // recvfrom: Recebe dados do socket, e preenche a estrutura do remetente.
+    
+    // recvfrom: similar ao recv, mas também preenche uma estrutura com
+    // o endereço do remetente (IP e porta).
     ssize_t bytes_received = recvfrom(sockfd, buffer.data(), buffer.size(), 0,
-                                     (struct sockaddr*)&sender_addr, &addr_len);
+                                      (struct sockaddr *)&sender_addr, &addr_len);
 
     if (bytes_received > 0) {
-        // Converte o endereço IP binário do remetente para string.
         sender_ip = inet_ntoa(sender_addr.sin_addr);
-        // Converte a porta do remetente da ordem de bytes de rede para a ordem de bytes do host.
         sender_port = ntohs(sender_addr.sin_port);
+    } else if (bytes_received < 0) {
+        // Em um socket com timeout, EAGAIN ou EWOULDBLOCK é retornado quando o timeout ocorre.
+        // Isso não é um erro fatal, é um comportamento esperado para sair do bloqueio.
+        if (errno != EAGAIN && errno != EWOULDBLOCK) {
+             perror("Erro em recvfrom"); // Imprime o erro real do sistema, se houver um.
+        }
     }
+
     return bytes_received;
 }

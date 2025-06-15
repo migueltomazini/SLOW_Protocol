@@ -1,0 +1,32 @@
+[
+{
+  "directory": "/home/mtomazini/Documents/GitHub/SLOW_Protocol/build",
+  "command": "/usr/bin/c++  -I/home/mtomazini/Documents/GitHub/SLOW_Protocol/src -g -std=c++17 -o CMakeFiles/peripheral.dir/src/main.cpp.o -c /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/main.cpp",
+  "file": "/home/mtomazini/Documents/GitHub/SLOW_Protocol/src/main.cpp",
+  "output": "CMakeFiles/peripheral.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/mtomazini/Documents/GitHub/SLOW_Protocol/build",
+  "command": "/usr/bin/c++  -I/home/mtomazini/Documents/GitHub/SLOW_Protocol/src -g -std=c++17 -o CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o -c /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/SlowPacket.cpp",
+  "file": "/home/mtomazini/Documents/GitHub/SLOW_Protocol/src/SlowPacket.cpp",
+  "output": "CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o"
+},
+{
+  "directory": "/home/mtomazini/Documents/GitHub/SLOW_Protocol/build",
+  "command": "/usr/bin/c++  -I/home/mtomazini/Documents/GitHub/SLOW_Protocol/src -g -std=c++17 -o CMakeFiles/peripheral.dir/src/UdpSocket.cpp.o -c /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/UdpSocket.cpp",
+  "file": "/home/mtomazini/Documents/GitHub/SLOW_Protocol/src/UdpSocket.cpp",
+  "output": "CMakeFiles/peripheral.dir/src/UdpSocket.cpp.o"
+},
+{
+  "directory": "/home/mtomazini/Documents/GitHub/SLOW_Protocol/build",
+  "command": "/usr/bin/c++  -I/home/mtomazini/Documents/GitHub/SLOW_Protocol/src -g -std=c++17 -o CMakeFiles/peripheral.dir/src/Peripheral.cpp.o -c /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/Peripheral.cpp",
+  "file": "/home/mtomazini/Documents/GitHub/SLOW_Protocol/src/Peripheral.cpp",
+  "output": "CMakeFiles/peripheral.dir/src/Peripheral.cpp.o"
+},
+{
+  "directory": "/home/mtomazini/Documents/GitHub/SLOW_Protocol/build",
+  "command": "/usr/bin/c++  -I/home/mtomazini/Documents/GitHub/SLOW_Protocol/src -g -std=c++17 -o CMakeFiles/peripheral.dir/src/Utils.cpp.o -c /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/Utils.cpp",
+  "file": "/home/mtomazini/Documents/GitHub/SLOW_Protocol/src/Utils.cpp",
+  "output": "CMakeFiles/peripheral.dir/src/Utils.cpp.o"
+}
+]

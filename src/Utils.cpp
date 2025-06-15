@@ -8,6 +8,7 @@
 #include "Utils.h"
 #include <random>
 #include <chrono>
+#include <iomanip>
 
 std::array<uint8_t, 16> Utils::generateUUIDv8() {
     std::array<uint8_t, 16> uuid;
@@ -57,10 +58,10 @@ uint16_t Utils::littleEndianToHost16(uint16_t le_val) {
 
 uint32_t Utils::hostToLittleEndian32(uint32_t host_val) {
     if (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) {
-        return ((host_val >> 24) & 0x000000FF) |
-               ((host_val >>  8) & 0x0000FF00) |
-               ((host_val <<  8) & 0x00FF0000) |
-               ((host_val << 24) & 0xFF000000);
+    return ((host_val >> 24) & 0x000000FF) |
+            ((host_val >>  8) & 0x0000FF00) |
+            ((host_val <<  8) & 0x00FF0000) |
+            ((host_val << 24) & 0xFF000000);
     } else {
         return host_val;
     }
@@ -75,4 +76,22 @@ uint32_t Utils::littleEndianToHost32(uint32_t le_val) {
     } else {
         return le_val;
     }
+}
+
+uint8_t Utils::reverseBits(uint8_t b) {
+   b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+   b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+   b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+   return b;
+}
+
+void Utils::printHex(const std::vector<uint8_t>& data, const std::string& label) {
+    std::cout << label << " (" << data.size() << " bytes):" << std::endl;
+    for (size_t i = 0; i < data.size(); ++i) {
+        std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)data[i] << " ";
+        if ((i + 1) % 16 == 0) {
+            std::cout << std::endl;
+        }
+    }
+    std::cout << std::dec << std::endl; // Volta para decimal
 }

@@ -18,14 +18,13 @@ const uint16_t MAX_SLOW_PACKET_SIZE = 1472;
 const uint16_t MAX_SLOW_DATA_SIZE = 1440;
 
 // Flags SLOW (5 bits)
-enum SlowFlags : uint8_t {
-    FLAG_CONNECT = 0x08,        // C (bit 0)
-    FLAG_REVIVE = 0x04,         // R (bit 1)
-    FLAG_ACK = 0x02,            // ACK (bit 2)
-    FLAG_ACCEPT_REJECT = 0x01,  // A/R (bit 3)
-    FLAG_MORE_BITS = 0x10       // MB (bit 4)
+enum SlowFlags : uint32_t { // Precisa ser uint32_t para conter os valores
+    FLAG_CONNECT       = 1 << 27, // C está no bit 24
+    FLAG_REVIVE        = 1 << 28, // R está no bit 25
+    FLAG_ACK           = 1 << 29, // ACK está no bit 26
+    FLAG_ACCEPT_REJECT = 1 << 30, // A/R está no bit 27
+    FLAG_MORE_BITS     = 1U << 31  // MB está no bit 28
 };
-
 
 // Estrutura do cabeçalho do pacote SLOW
 #pragma pack(push, 1) // Garante que não haverá padding entre os campos
