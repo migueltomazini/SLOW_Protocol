@@ -12,6 +12,8 @@
 #include <iostream>
 #include <SlowPacket.h>
 
+class SlowPacket;
+
 namespace Utils {
     // Gera um UUIDv8 conforme RFC9562.
     std::array<uint8_t, 16> generateUUIDv8();
@@ -29,9 +31,10 @@ namespace Utils {
 
     uint8_t reverseBits(uint8_t b);
 
-    // ... no final do namespace Utils
+    // Imprime um vetor de bytes em formato hexadecimal, útil para depuração de baixo nível.
     void printHex(const std::vector<uint8_t>& data, const std::string& label);
 
+    // Imprime os detalhes do cabeçalho do pacote, útil para depuração.
     void printPacketDetails(const SlowPacket& packet, const std::string& label);
 };
 

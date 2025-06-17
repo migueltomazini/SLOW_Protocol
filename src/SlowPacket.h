@@ -1,9 +1,13 @@
-// SlowPacket.h
-// Este arquivo de cabeçalho define a estrutura fundamental do pacote SLOW.
-// Ele especifica o layout do cabeçalho do protocolo, incluindo campos como
-// Session ID, Sequence Number, Flags e informações de fragmentação/janela.
-// Além disso, declara a classe SlowPacket que encapsula esses dados
-// e oferece métodos para serializar e deserializar os pacotes em bytes.
+/**
+ * @file SlowPacket.h
+ * @brief Definição da estrutura do pacote e da classe de manipulação para o protocolo SLOW.
+ *
+ * Especifica o layout do cabeçalho do protocolo, incluindo campos como Session ID,
+ * Sequence Number e flags. A classe SlowPacket oferece métodos para serializar
+ * um pacote em bytes para transmissão e deserializar bytes recebidos de volta
+ * para uma estrutura de pacote, cuidando da conversão de endianness e da
+ * manipulação de campos de bits.
+ */
 
 #ifndef SLOW_PACKET_H
 #define SLOW_PACKET_H
@@ -12,32 +16,39 @@
 #include <vector>
 #include <array>
 
-// Tamanho máximo do pacote SLOW
-const uint16_t MAX_SLOW_PACKET_SIZE = 1472;
-// Tamanho máximo do campo de dados
-const uint16_t MAX_SLOW_DATA_SIZE = 1440;
+// Constantes do protocolo SLOW
+const uint16_t MAX_SLOW_PACKET_SIZE = 1472; // Tamanho máximo do pacote UDP
+const uint16_t MAX_SLOW_DATA_SIZE = 1440;  // Tamanho máximo do payload de dados
 
-// Flags SLOW (5 bits)
-enum SlowFlags : uint32_t { // Precisa ser uint32_t para conter os valores
-    FLAG_CONNECT       = 1 << 4,
-    FLAG_REVIVE        = 1 << 3,
-    FLAG_ACK           = 1 << 2, 
-    FLAG_ACCEPT_REJECT = 1 << 1,
-    FLAG_MORE_BITS     = 1 << 0
+/**
+ * @enum SlowFlags
+ * @brief Enumeração para as flags de 5 bits no cabeçalho SLOW.
+ */
+enum SlowFlags : uint32_t {
+    FLAG_CONNECT       = 1 << 4, // Sinaliza um pacote de início de conexão ou desconexão.
+    FLAG_REVIVE        = 1 << 3, // Sinaliza uma tentativa de reativação de sessão (0-way connect).
+    FLAG_ACK           = 1 << 2, // Sinaliza que o pacote é (ou contém) um Acknowledgement.
+    FLAG_ACCEPT_REJECT = 1 << 1, // Sinaliza uma resposta de aceitação/rejeição a uma conexão.
+    FLAG_MORE_BITS     = 1 << 0  // Sinaliza que há mais fragmentos de dados a serem recebidos.
 };
 
-// Estrutura do cabeçalho do pacote SLOW
-#pragma pack(push, 1) // Garante que não haverá padding entre os campos
+/**
+ * @struct SlowHeader
+ * @brief Estrutura que representa o cabeçalho de 32 bytes do protocolo SLOW.
+ *        O pragma pack(1) garante que o compilador não adicione preenchimento (padding)
+ *        entre os membros, mantendo o layout de bytes exato para a transmissão.
+ */
+#pragma pack(push, 1)
 struct SlowHeader {
-    std::array<uint8_t, 16> sid;    // Session ID (UUIDv8) - 128 bits
-    uint32_t sttl_and_flags;        // sttl (27 bits) e flags (5 bits) combinados
-    uint32_t seqnum;                // Sequence Number - 32 bits
-    uint32_t acknum;                // Acknowledgement Number - 32 bits
-    uint16_t window;                // Window Size - 16 bits
-    uint8_t fid;                    // Fragment ID - 8 bits
-    uint8_t fo;                     // Fragment Offset - 8 bits
+    std::array<uint8_t, 16> sid;    // 16 bytes: Session ID (UUIDv8)
+    uint32_t sttl_and_flags;        //  4 bytes: sttl (27 bits) e flags (5 bits) combinados
+    uint32_t seqnum;                //  4 bytes: Sequence Number
+    uint32_t acknum;                //  4 bytes: Acknowledgement Number
+    uint16_t window;                //  2 bytes: Window Size
+    uint8_t fid;                    //  1 byte:  Fragment ID
+    uint8_t fo;                     //  1 byte:  Fragment Offset
 
-    // Funções para manipular sttl e flags
+    // Funções para manipular sttl e flags de forma segura
     void setSttl(uint32_t sttl);
     uint32_t getSttl() const;
     void setFlag(SlowFlags flag, bool value);
@@ -45,44 +56,38 @@ struct SlowHeader {
 };
 #pragma pack(pop)
 
+/**
+ * @class SlowPacket
+ * @brief Encapsula um cabeçalho SLOW e um payload de dados, fornecendo métodos
+ *        para serialização e deserialização.
+ */
 class SlowPacket {
 public:
     SlowHeader header;
-    std::vector<uint8_t> data; // Campo de dados, até 1440 bytes
+    std::vector<uint8_t> data;
 
     SlowPacket();
-    // Construtor para criar um pacote a partir de bytes recebidos
-    SlowPacket(const std::vector<uint8_t>& raw_packet);
+    explicit SlowPacket(const std::vector<uint8_t>& raw_packet);
 
-    // Serializa o pacote para envio via UDP
     std::vector<uint8_t> serialize() const;
-    
-    // Deserializa bytes recebidos para preencher o pacote
     bool deserialize(const std::vector<uint8_t>& raw_packet);
 
-    // Métodos auxiliares para definir e obter campos
+    // Métodos de acesso (getters/setters) para os campos do cabeçalho
     void setSessionID(const std::array<uint8_t, 16>& id);
     std::array<uint8_t, 16> getSessionID() const;
-
     void setSequenceNumber(uint32_t num);
     uint32_t getSequenceNumber() const;
-
     void setAcknowledgementNumber(uint32_t num);
     uint32_t getAcknowledgementNumber() const;
-
     void setWindowSize(uint16_t size);
     uint16_t getWindowSize() const;
-
     void setFragmentID(uint8_t id);
     uint8_t getFragmentID() const;
-
     void setFragmentOffset(uint8_t offset);
     uint8_t getFragmentOffset() const;
-
     void setData(const std::vector<uint8_t>& data_bytes);
     const std::vector<uint8_t>& getData() const;
-
     uint32_t getSttl() const;
 };
 
-#endif
+#endif // SLOW_PACKET_H

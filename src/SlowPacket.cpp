@@ -1,127 +1,112 @@
-// SlowPacket.cpp
-// Este arquivo implementa a classe SlowPacket. Ele contém a lógica para
-// serializar um objeto SlowPacket em um stream de bytes para transmissão
-// e para deserializar um stream de bytes recebido de volta para um objeto
-// SlowPacket. Cuida da conversão de endianness e da manipulação dos campos
-// de bits do cabeçalho.
+/**
+ * @file SlowPacket.cpp
+ * @brief Implementação da classe SlowPacket e dos métodos de manipulação do cabeçalho.
+ *
+ * Este arquivo contém a lógica para serializar um objeto SlowPacket em um
+ * fluxo de bytes para transmissão e para deserializar um fluxo de bytes
+ * recebido de volta para um objeto SlowPacket. Ele lida com a conversão
+ * de endianness e a manipulação dos campos de bits do cabeçalho de forma segura.
+ */
 
 #include "SlowPacket.h"
 #include "Utils.h"
 #include <cstring> // Para memcpy
-#include <iostream> // Para debug
+#include <iostream>
 
-// --- Implementação dos métodos da struct SlowHeader ---
+// Máscaras de bits para o campo sttl_and_flags
+const uint32_t FLAGS_MASK = 0x0000001F; // Máscara para os 5 bits inferiores (flags)
+const uint32_t STTL_MASK = ~FLAGS_MASK;  // Máscara para os 27 bits superiores (sttl)
 
-// --- NOVAS MÁSCARAS ---
-// As flags ocupam os 5 bits inferiores (0-4)
-const uint32_t FLAGS_MASK = 0x0000001F; // (binário ...00011111)
-// sttl ocupa os 27 bits superiores (5-31)
-// A máscara é o inverso da FLAGS_MASK
-const uint32_t STTL_MASK = ~FLAGS_MASK; // (binário ...11100000)
-
-// --- NOVAS IMPLEMENTAÇÕES ---
+//==============================================================================
+// MÉTODOS DA STRUCT SlowHeader
+//==============================================================================
 
 void SlowHeader::setSttl(uint32_t sttl) {
-    // 1. Limpa os bits antigos do STTL, mantendo as flags intactas.
-    //    (sttl_and_flags & FLAGS_MASK) isola apenas os 5 bits das flags.
+    // Isola as flags atuais para não as corromper.
     uint32_t flags_only = sttl_and_flags & FLAGS_MASK;
-
-    // 2. Prepara o novo valor do STTL, já deslocado para a posição correta.
-    //    Garante que o valor de sttl não exceda os 27 bits permitidos.
+    // Desloca o valor do STTL para a posição correta (bits 5 a 31) e aplica a máscara.
     uint32_t sttl_part = (sttl << 5) & STTL_MASK;
-
-    // 3. Combina as flags existentes com o novo STTL.
+    // Combina as flags preservadas com o novo valor do STTL.
     sttl_and_flags = flags_only | sttl_part;
 }
 
 uint32_t SlowHeader::getSttl() const {
-    // Extrai os 27 bits superiores e desloca de volta para a direita.
+    // Extrai os 27 bits superiores e os desloca de volta para a direita.
     return (sttl_and_flags & STTL_MASK) >> 5;
 }
 
 void SlowHeader::setFlag(SlowFlags flag, bool value) {
-    // A lógica de ligar/desligar bit continua a mesma, mas agora opera
-    // nos bits inferiores.
     if (value) {
-        sttl_and_flags |= flag;
+        sttl_and_flags |= flag; // Liga o bit da flag usando OR
     } else {
-        sttl_and_flags &= ~flag;
+        sttl_and_flags &= ~flag; // Desliga o bit da flag usando AND com a máscara invertida
     }
 }
 
 bool SlowHeader::getFlag(SlowFlags flag) const {
-    // A lógica de verificação continua a mesma.
     return (sttl_and_flags & flag) != 0;
 }
 
-// --- Implementação dos métodos da classe SlowPacket ---
+//==============================================================================
+// MÉTODOS DA CLASSE SlowPacket
+//==============================================================================
 
 SlowPacket::SlowPacket() {
-    // Inicializa o cabeçalho com zeros. A diretiva #pragma pack(1) garante
-    // que não há padding, então sizeof(SlowHeader) é o tamanho real do cabeçalho.
     memset(&header, 0, sizeof(SlowHeader));
-    // O vetor de dados 'data' já é inicializado vazio por padrão.
 }
 
-// Construtor que deserializa a partir de um vetor de bytes
 SlowPacket::SlowPacket(const std::vector<uint8_t>& raw_packet) {
     deserialize(raw_packet);
 }
 
 bool SlowPacket::deserialize(const std::vector<uint8_t>& raw_packet) {
-    // Um pacote válido deve ter pelo menos o tamanho do cabeçalho
     if (raw_packet.size() < sizeof(SlowHeader)) {
         std::cerr << "Erro: pacote recebido muito pequeno para ser um pacote SLOW." << std::endl;
         return false;
     }
 
-    // Copia os bytes do cabeçalho diretamente para a struct.
-    // Isso funciona por causa do #pragma pack(1).
+    // Copia os bytes brutos diretamente para a estrutura do cabeçalho.
     memcpy(&header, raw_packet.data(), sizeof(SlowHeader));
 
-    // Converte os campos de múltiplos bytes de little-endian (rede) para host-endian.
+    // Converte os campos multi-byte do formato little-endian (rede) para o formato do host.
     header.sttl_and_flags = Utils::littleEndianToHost32(header.sttl_and_flags);
     header.seqnum = Utils::littleEndianToHost32(header.seqnum);
     header.acknum = Utils::littleEndianToHost32(header.acknum);
     header.window = Utils::littleEndianToHost16(header.window);
-    // Campos de 1 byte (sid, fid, fo) não precisam de conversão.
 
-    // Se houver dados além do cabeçalho, copia-os para o vetor 'data'.
+    // Copia o payload de dados, se houver.
     if (raw_packet.size() > sizeof(SlowHeader)) {
         data.assign(raw_packet.begin() + sizeof(SlowHeader), raw_packet.end());
     } else {
         data.clear();
     }
-
     return true;
 }
 
 std::vector<uint8_t> SlowPacket::serialize() const {
-    // Cria uma cópia do cabeçalho para poder modificar os campos para o formato de rede
-    // sem alterar o estado do objeto original (o método é const).
     SlowHeader network_header = header;
 
-    // Converte os campos de múltiplos bytes de host-endian para little-endian (rede).
+    // Converte os campos multi-byte do formato do host para o formato little-endian (rede).
     network_header.sttl_and_flags = Utils::hostToLittleEndian32(network_header.sttl_and_flags);
     network_header.seqnum = Utils::hostToLittleEndian32(network_header.seqnum);
     network_header.acknum = Utils::hostToLittleEndian32(network_header.acknum);
     network_header.window = Utils::hostToLittleEndian16(network_header.window);
 
-    // Cria o vetor de bytes com o tamanho total necessário (cabeçalho + dados).
+    // Cria o vetor de bytes com o tamanho total necessário.
     std::vector<uint8_t> raw_packet(sizeof(SlowHeader) + data.size());
 
-    // Copia o cabeçalho já convertido para o início do vetor de bytes.
+    // Copia o cabeçalho no formato de rede para o início do vetor de bytes.
     memcpy(raw_packet.data(), &network_header, sizeof(SlowHeader));
 
-    // Se houver dados, copia-os para o vetor de bytes logo após o cabeçalho.
+    // Copia o payload de dados, se houver, logo após o cabeçalho.
     if (!data.empty()) {
         memcpy(raw_packet.data() + sizeof(SlowHeader), data.data(), data.size());
     }
-
     return raw_packet;
 }
 
-// --- Métodos auxiliares (Setters e Getters) ---
+
+// --- Métodos de acesso (Setters e Getters) ---
 
 void SlowPacket::setSessionID(const std::array<uint8_t, 16>& id) {
     header.sid = id;
