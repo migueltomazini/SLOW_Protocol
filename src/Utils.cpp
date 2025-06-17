@@ -95,3 +95,50 @@ void Utils::printHex(const std::vector<uint8_t>& data, const std::string& label)
     }
     std::cout << std::dec << std::endl; // Volta para decimal
 }
+
+void Utils::printPacketDetails(const SlowPacket& packet, const std::string& label) {
+    std::cout << "---[ Packet Details: " << label << " ]---" << std::endl;
+    
+    // Imprime o Session ID em formato hexadecimal.
+    std::cout << "  - SID:      ";
+    for (const auto& byte : packet.getSessionID()) {
+        std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)byte;
+    }
+    std::cout << std::dec << std::endl; // Volta para decimal
+
+    // Imprime os campos do cabeçalho em decimal.
+    std::cout << "  - STTL:     " << packet.getSttl() << std::endl;
+    std::cout << "  - SeqNum:   " << packet.getSequenceNumber() << std::endl;
+    std::cout << "  - AckNum:   " << packet.getAcknowledgementNumber() << std::endl;
+    std::cout << "  - Window:   " << packet.getWindowSize() << std::endl;
+    std::cout << "  - Frag ID:  " << (int)packet.getFragmentID() << std::endl;
+    std::cout << "  - Frag Off: " << (int)packet.getFragmentOffset() << std::endl;
+    
+    // Analisa e imprime as flags que estão ativas.
+    std::cout << "  - Flags:    [";
+    if (packet.header.getFlag(FLAG_CONNECT)) std::cout << "C";
+    if (packet.header.getFlag(FLAG_REVIVE)) std::cout << "R";
+    if (packet.header.getFlag(FLAG_ACK)) std::cout << "A";
+    if (packet.header.getFlag(FLAG_ACCEPT_REJECT)) std::cout << "A/R";
+    if (packet.header.getFlag(FLAG_MORE_BITS)) std::cout << "M";
+    std::cout << "]" << std::endl;
+    
+    // Imprime o tamanho e uma prévia do payload (se houver).
+    const auto& data = packet.getData();
+    std::cout << "  - Data Len: " << data.size() << " bytes" << std::endl;
+    if (!data.empty()) {
+        std::cout << "  - Data Str: \"";
+        for(size_t i = 0; i < std::min((size_t)32, data.size()); ++i) {
+            // Imprime caracteres imprimíveis, ou '.' para os não-imprimíveis.
+            char c = data[i];
+            if (isprint(c)) {
+                std::cout << c;
+            } else {
+                std::cout << ".";
+            }
+        }
+        if (data.size() > 32) std::cout << "...";
+        std::cout << "\"" << std::endl;
+    }
+    std::cout << "------------------------------------------------" << std::endl;
+}

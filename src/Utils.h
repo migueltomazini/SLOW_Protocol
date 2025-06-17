@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <vector>
 #include <iostream>
+#include <SlowPacket.h>
 
 namespace Utils {
     // Gera um UUIDv8 conforme RFC9562.
@@ -30,6 +31,8 @@ namespace Utils {
 
     // ... no final do namespace Utils
     void printHex(const std::vector<uint8_t>& data, const std::string& label);
+
+    void printPacketDetails(const SlowPacket& packet, const std::string& label);
 };
 
 #endif 

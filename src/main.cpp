@@ -77,27 +77,6 @@ int main(int argc, char* argv[]) {
         print_status(peripheral);
 
         peripheral.sendData(data_to_send);
-        
-        std::cout << "\n>>> Pacote enviado. Iniciando ciclo de monitoramento por 12 segundos." << std::endl;
-        std::cout << ">>> Observe os logs da thread de rede e as mudanças no STATUS REPORT." << std::endl;
-
-        bool ack_received = false;
-        for (int i = 0; i < 12; ++i) {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            std::cout << "\n(Monitoramento: T+" << i + 1 << "s)" << std::endl;
-            print_status(peripheral);
-
-            // Se a fila de pacotes sem ACK ficou vazia, o ACK foi recebido!
-            if (peripheral.getUnackedPacketCount() == 0) {
-                std::cout << ">>> SUCESSO! O ACK foi recebido e processado." << std::endl;
-                ack_received = true;
-                break;
-            }
-        }
-        
-        if (!ack_received) {
-             std::cout << "\n>>> FALHA! O ACK não foi recebido no tempo esperado. O timeout deve ter ocorrido." << std::endl;
-        }
 
         press_enter_to_continue();
 

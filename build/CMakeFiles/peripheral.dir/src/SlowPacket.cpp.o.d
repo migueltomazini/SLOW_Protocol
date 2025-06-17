@@ -145,5 +145,6 @@ CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o: \
  /usr/include/c++/15/bits/locale_facets.tcc \
  /usr/include/c++/15/bits/basic_ios.tcc \
  /usr/include/c++/15/bits/ostream.tcc /usr/include/c++/15/istream \
- /usr/include/c++/15/bits/istream.tcc /usr/include/c++/15/cstring \
- /usr/include/string.h /usr/include/strings.h
+ /usr/include/c++/15/bits/istream.tcc \
+ /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/SlowPacket.h \
+ /usr/include/c++/15/cstring /usr/include/string.h /usr/include/strings.h

@@ -1,11 +1,4 @@
 // Peripheral.h
-// Este arquivo de cabeçalho define a classe Peripheral, que representa
-// a lógica principal do lado "cliente" do protocolo SLOW.
-// Ele gerencia o estado da conexão, os identificadores de sessão,
-// números de sequência e a janela de controle de fluxo.
-// Declara métodos para iniciar a conexão, enviar dados, desconectar,
-// e processar os pacotes recebidos do central.
-
 #ifndef PERIPHERAL_H
 #define PERIPHERAL_H
 
@@ -16,6 +9,7 @@
 #include <chrono>
 #include <map>
 #include <vector>
+#include <mutex> // ADICIONADO: Para std::mutex
 
 // Estrutura para guardar pacotes pendentes de ACK
 struct UnackedPacketInfo {
@@ -42,7 +36,7 @@ public:
     bool sendData(const std::vector<uint8_t>& data_payload);
     bool sendDisconnect();
 
-    // --- NOVOS GETTERS PARA DEBUG ---
+    // Getters para debug e status
     std::string getStateAsString() const;
     bool isConnected() const;
     uint32_t getSessionSTTL() const;
@@ -56,7 +50,7 @@ private:
     SessionState current_state;
 
     std::array<uint8_t, 16> session_id;
-    uint32_t session_sttl; // ADICIONADO: Para armazenar o TTL da sessão 
+    uint32_t session_sttl;
 
     uint32_t current_seqnum;
     uint32_t last_seqnum_from_central;
@@ -64,6 +58,10 @@ private:
     uint16_t local_window_size;
 
     std::vector<UnackedPacketInfo> unacked_packets;
+    // ADICIONADO: Mutex para proteger o acesso a `unacked_packets`.
+    // Declarado como 'mutable' para que possa ser travado/destravado dentro de métodos const, como getUnackedPacketCount.
+    mutable std::mutex unacked_packets_mtx; 
+    
     std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t>>> fragmented_data_buffer;
 
     void processReceivedPacket(const std::vector<uint8_t>& raw_packet);
@@ -71,7 +69,6 @@ private:
     void handleAckResponse(const SlowPacket& packet);
     void handleFailedResponse(const SlowPacket& packet);
     void handleRetransmission();
-    void sendConnectAck(const SlowPacket& packet);
 };
 
 #endif
