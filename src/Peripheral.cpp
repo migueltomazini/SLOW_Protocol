@@ -101,7 +101,11 @@ bool Peripheral::sendData(const std::vector<uint8_t>& data_payload) {
             fragment_packet.setAcknowledgementNumber(last_seqnum_from_central);
             fragment_packet.setWindowSize(local_window_size);
             fragment_packet.setFragmentID(fid);
-            fragment_packet.setFragmentOffset(fo++);
+            fragment_packet.setFragmentOffset(fo);
+
+            // Imprime detalhes de cada fragmento
+            std::string label = "Pacote DATA Fragmento " + std::to_string(static_cast<int>(fo)) + " Saindo";
+            Utils::printPacketDetails(fragment_packet, label);
             
             // Adiciona à fila de retransmissão de forma segura
             {
@@ -111,6 +115,7 @@ bool Peripheral::sendData(const std::vector<uint8_t>& data_payload) {
             auto raw_packet = fragment_packet.serialize();
             udp_socket.sendTo(raw_packet, central_ip, central_port);
             offset += chunk_size;
+            fo++;
         }
         std::cout << "Dados fragmentados enviados em " << (int)fo << " pacotes." << std::endl;
     } else {
@@ -221,7 +226,6 @@ void Peripheral::processReceivedPacket(const std::vector<uint8_t>& raw_packet) {
             break;
 
         case CONNECTED:
-        case DISCONNECTING:
             // Em uma sessão ativa, o SID deve corresponder.
             if (packet.getSessionID() != session_id) {
                 std::cout << "Aviso: Pacote recebido com SID incorreto. Ignorando." << std::endl;
@@ -231,9 +235,30 @@ void Peripheral::processReceivedPacket(const std::vector<uint8_t>& raw_packet) {
                 handleAckResponse(packet);
             }
             break;
+        
+        case DISCONNECTING:
+            // *** Tratamento especial para o problema do Central ***
+            // Se um pacote com SID incorreto for recebido aqui, é o erro que queremos
+            // capturar. Forçamos o encerramento da aplicação.
+            if (packet.getSessionID() != session_id) {
+                std::cerr << "\nERRO CRÍTICO: Pacote com SID inválido recebido durante a desconexão. "
+                          << "Este é um comportamento esperado do Central no caso desse projeto. Encerrando." << std::endl;
+                Utils::printPacketDetails(packet, "Pacote Incorreto Recebido");
+                current_state = DISCONNECTED;
+                // Limpa pacotes não confirmados para garantir que o loop run() termine.
+                {
+                    std::lock_guard<std::mutex> lock(unacked_packets_mtx);
+                    unacked_packets.clear();
+                }
+                return;
+            }
+            // Se o SID estiver correto, processa como um ACK normal.
+            if (packet.header.getFlag(FLAG_ACK)) {
+                handleAckResponse(packet);
+            }
+            break;
             
         case DISCONNECTED:
-            // Ignora pacotes se já estivermos totalmente desconectados.
             break;
     }
 }
@@ -287,7 +312,8 @@ void Peripheral::handleAckResponse(const SlowPacket& packet) {
 
     {
         std::lock_guard<std::mutex> lock(unacked_packets_mtx);
-        // Remove todos os pacotes com número de sequência menor ou igual ao acknum recebido.
+        // Remove todos os pacotes com número de sequência menor que o acknum recebido.
+        // O protocolo SLOW usa ACK cumulativo, então um ACK para N confirma todos os pacotes < N.
         unacked_packets.erase(
             std::remove_if(unacked_packets.begin(), unacked_packets.end(),
                            [acknum](const auto& unacked) {
@@ -297,9 +323,10 @@ void Peripheral::handleAckResponse(const SlowPacket& packet) {
         );
     }
     
+    // Se estávamos desconectando e agora não há mais pacotes pendentes, a desconexão está completa.
     if (current_state == DISCONNECTING && getUnackedPacketCount() == 0) {
         current_state = DISCONNECTED;
-        std::cout << "Desconexão confirmada pelo central." << std::endl;
+        std::cout << "Desconexão confirmada pelo central (todos os pacotes foram confirmados)." << std::endl;
     }
     
     std::cout << "ACK recebido (acknum=" << acknum << "). Pacotes em trânsito: " << getUnackedPacketCount() << std::endl;

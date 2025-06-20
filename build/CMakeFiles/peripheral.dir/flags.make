@@ -6,5 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/home/mtomazini/Documents/GitHub/SLOW_Protocol/src
 
-CXX_FLAGS = -g -std=c++17
+CXX_FLAGS = -std=c++17
 

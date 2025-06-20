@@ -145,8 +145,23 @@ int main(int argc, char* argv[]) {
         std::cout << "\n--- ETAPA 4: Enviando pedido de desconexão ---" << std::endl;
         peripheral.sendDisconnect();
         
-        std::cout << "Aguardando 3 segundos para finalização da thread de rede..." << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(3));
+        std::cout << "Aguardando finalização da sessão (timeout de 10s)..." << std::endl;
+        start_time = std::chrono::steady_clock::now();
+        bool disconnected_cleanly = false;
+        // Espera ativa pela mudança de estado para DISCONNECTED
+        while (std::chrono::steady_clock::now() - start_time < std::chrono::seconds(10)) {
+            if (peripheral.getStateAsString() == "DISCONNECTED") {
+                std::cout << ">>> Sessão finalizada com sucesso (estado = DISCONNECTED)." << std::endl;
+                disconnected_cleanly = true;
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+        if (!disconnected_cleanly) {
+            std::cerr << "\nAVISO: Timeout na desconexão. A thread de rede pode não ter sido encerrada corretamente." << std::endl;
+        }
+
 
         if (network_thread.joinable()) {
             network_thread.join();

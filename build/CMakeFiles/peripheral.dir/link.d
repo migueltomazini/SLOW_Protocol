@@ -3,9 +3,9 @@ peripheral: \
   /usr/lib/gcc/x86_64-redhat-linux/15/../../../../lib64/crti.o \
   /usr/lib/gcc/x86_64-redhat-linux/15/crtbegin.o \
   CMakeFiles/peripheral.dir/src/main.cpp.o \
+  CMakeFiles/peripheral.dir/src/Peripheral.cpp.o \
   CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o \
   CMakeFiles/peripheral.dir/src/UdpSocket.cpp.o \
-  CMakeFiles/peripheral.dir/src/Peripheral.cpp.o \
   CMakeFiles/peripheral.dir/src/Utils.cpp.o \
   /usr/lib/gcc/x86_64-redhat-linux/15/../../../../lib64/libpthread.a \
   /usr/lib/gcc/x86_64-redhat-linux/15/libstdc++.so \
@@ -44,11 +44,11 @@ peripheral: \
 
 CMakeFiles/peripheral.dir/src/main.cpp.o:
 
+CMakeFiles/peripheral.dir/src/Peripheral.cpp.o:
+
 CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o:
 
 CMakeFiles/peripheral.dir/src/UdpSocket.cpp.o:
-
-CMakeFiles/peripheral.dir/src/Peripheral.cpp.o:
 
 CMakeFiles/peripheral.dir/src/Utils.cpp.o:
 

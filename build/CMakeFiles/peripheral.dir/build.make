@@ -86,10 +86,24 @@ CMakeFiles/peripheral.dir/src/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/peripheral.dir/src/main.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/main.cpp -o CMakeFiles/peripheral.dir/src/main.cpp.s
 
+CMakeFiles/peripheral.dir/src/Peripheral.cpp.o: CMakeFiles/peripheral.dir/flags.make
+CMakeFiles/peripheral.dir/src/Peripheral.cpp.o: /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/Peripheral.cpp
+CMakeFiles/peripheral.dir/src/Peripheral.cpp.o: CMakeFiles/peripheral.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mtomazini/Documents/GitHub/SLOW_Protocol/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/peripheral.dir/src/Peripheral.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/peripheral.dir/src/Peripheral.cpp.o -MF CMakeFiles/peripheral.dir/src/Peripheral.cpp.o.d -o CMakeFiles/peripheral.dir/src/Peripheral.cpp.o -c /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/Peripheral.cpp
+
+CMakeFiles/peripheral.dir/src/Peripheral.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/peripheral.dir/src/Peripheral.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/Peripheral.cpp > CMakeFiles/peripheral.dir/src/Peripheral.cpp.i
+
+CMakeFiles/peripheral.dir/src/Peripheral.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/peripheral.dir/src/Peripheral.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/Peripheral.cpp -o CMakeFiles/peripheral.dir/src/Peripheral.cpp.s
+
 CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o: CMakeFiles/peripheral.dir/flags.make
 CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o: /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/SlowPacket.cpp
 CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o: CMakeFiles/peripheral.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mtomazini/Documents/GitHub/SLOW_Protocol/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mtomazini/Documents/GitHub/SLOW_Protocol/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o -MF CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o.d -o CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o -c /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/SlowPacket.cpp
 
 CMakeFiles/peripheral.dir/src/SlowPacket.cpp.i: cmake_force
@@ -103,7 +117,7 @@ CMakeFiles/peripheral.dir/src/SlowPacket.cpp.s: cmake_force
 CMakeFiles/peripheral.dir/src/UdpSocket.cpp.o: CMakeFiles/peripheral.dir/flags.make
 CMakeFiles/peripheral.dir/src/UdpSocket.cpp.o: /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/UdpSocket.cpp
 CMakeFiles/peripheral.dir/src/UdpSocket.cpp.o: CMakeFiles/peripheral.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mtomazini/Documents/GitHub/SLOW_Protocol/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/peripheral.dir/src/UdpSocket.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mtomazini/Documents/GitHub/SLOW_Protocol/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/peripheral.dir/src/UdpSocket.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/peripheral.dir/src/UdpSocket.cpp.o -MF CMakeFiles/peripheral.dir/src/UdpSocket.cpp.o.d -o CMakeFiles/peripheral.dir/src/UdpSocket.cpp.o -c /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/UdpSocket.cpp
 
 CMakeFiles/peripheral.dir/src/UdpSocket.cpp.i: cmake_force
@@ -113,20 +127,6 @@ CMakeFiles/peripheral.dir/src/UdpSocket.cpp.i: cmake_force
 CMakeFiles/peripheral.dir/src/UdpSocket.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/peripheral.dir/src/UdpSocket.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/UdpSocket.cpp -o CMakeFiles/peripheral.dir/src/UdpSocket.cpp.s
-
-CMakeFiles/peripheral.dir/src/Peripheral.cpp.o: CMakeFiles/peripheral.dir/flags.make
-CMakeFiles/peripheral.dir/src/Peripheral.cpp.o: /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/Peripheral.cpp
-CMakeFiles/peripheral.dir/src/Peripheral.cpp.o: CMakeFiles/peripheral.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mtomazini/Documents/GitHub/SLOW_Protocol/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/peripheral.dir/src/Peripheral.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/peripheral.dir/src/Peripheral.cpp.o -MF CMakeFiles/peripheral.dir/src/Peripheral.cpp.o.d -o CMakeFiles/peripheral.dir/src/Peripheral.cpp.o -c /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/Peripheral.cpp
-
-CMakeFiles/peripheral.dir/src/Peripheral.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/peripheral.dir/src/Peripheral.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/Peripheral.cpp > CMakeFiles/peripheral.dir/src/Peripheral.cpp.i
-
-CMakeFiles/peripheral.dir/src/Peripheral.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/peripheral.dir/src/Peripheral.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/Peripheral.cpp -o CMakeFiles/peripheral.dir/src/Peripheral.cpp.s
 
 CMakeFiles/peripheral.dir/src/Utils.cpp.o: CMakeFiles/peripheral.dir/flags.make
 CMakeFiles/peripheral.dir/src/Utils.cpp.o: /home/mtomazini/Documents/GitHub/SLOW_Protocol/src/Utils.cpp
@@ -145,18 +145,18 @@ CMakeFiles/peripheral.dir/src/Utils.cpp.s: cmake_force
 # Object files for target peripheral
 peripheral_OBJECTS = \
 "CMakeFiles/peripheral.dir/src/main.cpp.o" \
+"CMakeFiles/peripheral.dir/src/Peripheral.cpp.o" \
 "CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o" \
 "CMakeFiles/peripheral.dir/src/UdpSocket.cpp.o" \
-"CMakeFiles/peripheral.dir/src/Peripheral.cpp.o" \
 "CMakeFiles/peripheral.dir/src/Utils.cpp.o"
 
 # External object files for target peripheral
 peripheral_EXTERNAL_OBJECTS =
 
 peripheral: CMakeFiles/peripheral.dir/src/main.cpp.o
+peripheral: CMakeFiles/peripheral.dir/src/Peripheral.cpp.o
 peripheral: CMakeFiles/peripheral.dir/src/SlowPacket.cpp.o
 peripheral: CMakeFiles/peripheral.dir/src/UdpSocket.cpp.o
-peripheral: CMakeFiles/peripheral.dir/src/Peripheral.cpp.o
 peripheral: CMakeFiles/peripheral.dir/src/Utils.cpp.o
 peripheral: CMakeFiles/peripheral.dir/build.make
 peripheral: CMakeFiles/peripheral.dir/compiler_depend.ts
