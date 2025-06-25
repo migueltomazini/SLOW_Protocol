@@ -96,6 +96,7 @@ bool Peripheral::sendData(const std::vector<uint8_t>& data_payload) {
                 fragment_packet.header.setFlag(FLAG_MORE_BITS, true);
             }
 
+            fragment_packet.header.setFlag(FLAG_ACK, true);
             fragment_packet.header.setSttl(session_sttl);
             fragment_packet.setSequenceNumber(current_seqnum++);
             fragment_packet.setAcknowledgementNumber(last_seqnum_from_central);
@@ -121,12 +122,13 @@ bool Peripheral::sendData(const std::vector<uint8_t>& data_payload) {
     } else {
         // Envio de pacote de dados simples (não fragmentado).
         SlowPacket data_packet;
+        data_packet.header.setFlag(FLAG_ACK, true);
+        data_packet.header.setSttl(session_sttl);
         data_packet.setSessionID(session_id);
         data_packet.setSequenceNumber(current_seqnum++);
         data_packet.setAcknowledgementNumber(last_seqnum_from_central);
         data_packet.setWindowSize(local_window_size);
         data_packet.setData(data_payload);
-        data_packet.header.setSttl(session_sttl);
 
         Utils::printPacketDetails(data_packet, "Pacote DATA Saindo");
         
@@ -155,12 +157,14 @@ bool Peripheral::sendDisconnect() {
     SlowPacket disconnect_packet;
     
     // Configuração específica para o pacote de disconnect, descoberta via testes.
-    disconnect_packet.setSessionID(Utils::generateNilUUID());
-    disconnect_packet.header.setSttl(0);
-    disconnect_packet.setSequenceNumber(0);
-    disconnect_packet.setAcknowledgementNumber(0);
+    disconnect_packet.setSessionID(session_id);
+    disconnect_packet.header.setSttl(session_sttl);
+    disconnect_packet.setSequenceNumber(current_seqnum++);
+    disconnect_packet.setAcknowledgementNumber(last_seqnum_from_central);
     disconnect_packet.setWindowSize(local_window_size);
     disconnect_packet.header.setFlag(FLAG_CONNECT, true);
+    disconnect_packet.header.setFlag(FLAG_REVIVE, true);
+    disconnect_packet.header.setFlag(FLAG_ACK, true);
 
     Utils::printPacketDetails(disconnect_packet, "Pacote DISCONNECT Saindo");
 
@@ -241,8 +245,7 @@ void Peripheral::processReceivedPacket(const std::vector<uint8_t>& raw_packet) {
             // Se um pacote com SID incorreto for recebido aqui, é o erro que queremos
             // capturar. Forçamos o encerramento da aplicação.
             if (packet.getSessionID() != session_id) {
-                std::cerr << "\nERRO CRÍTICO: Pacote com SID inválido recebido durante a desconexão. "
-                          << "Este é um comportamento esperado do Central no caso desse projeto. Encerrando." << std::endl;
+                std::cerr << "\nERRO CRÍTICO: Pacote com SID inválido recebido durante a desconexão. " << std::endl;
                 Utils::printPacketDetails(packet, "Pacote Incorreto Recebido");
                 current_state = DISCONNECTED;
                 // Limpa pacotes não confirmados para garantir que o loop run() termine.

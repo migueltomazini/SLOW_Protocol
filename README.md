@@ -65,13 +65,23 @@ Abaixo está um exemplo da saída do programa ao se conectar ao Central de teste
 Conectando ao Central em 142.93.184.175:7033
 
 --- ETAPA 1: Iniciando conexão ---
+Loop da thread de rede encerrado.
+Pacote de conexão enviado. Aguardando resposta...
+Aguardando conclusão do handshake...
+
+FALHA: Handshake não concluído em 5 segundos.
+mtomazini@fedora:~/Documents/GitHub/SLOW_Protocol/build$ ./peripheral 142.93.184.175 7033
+>>> INICIANDO TESTE COMPLETO DO PERIFÉRICO SLOW <<<
+Conectando ao Central em 142.93.184.175:7033
+
+--- ETAPA 1: Iniciando conexão ---
 Pacote de conexão enviado. Aguardando resposta...
 Aguardando conclusão do handshake...
 STTL recebido do central: 599ms
 ---[ Packet Details: Pacote Setup Recebido ]---
-  - SID:      2c7be1e4eac286fe8d1d2c8e05a38aee
+  - SID:      dab0a17f932f87c089f29782327bc63e
   - STTL:     599
-  - SeqNum:   4417
+  - SeqNum:   5462
   - AckNum:   0
   - Window:   1024
   - Frag ID:  0
@@ -85,7 +95,7 @@ Sessão estabelecida. SID recebido. Janela do Central: 1024
 ---[ STATUS REPORT ]---
   - Estado:         CONNECTED
   - Session STTL:   599
-  - Próximo SeqNum: 4418
+  - Próximo SeqNum: 5463
   - Pacotes sem ACK:0
 -----------------------
 
@@ -93,25 +103,25 @@ Sessão estabelecida. SID recebido. Janela do Central: 1024
 
 --- ETAPA 2: Enviando um pacote de dados simples ---
 ---[ Packet Details: Pacote DATA Saindo ]---
-  - SID:      2c7be1e4eac286fe8d1d2c8e05a38aee
+  - SID:      dab0a17f932f87c089f29782327bc63e
   - STTL:     599
-  - SeqNum:   4418
-  - AckNum:   4417
+  - SeqNum:   5463
+  - AckNum:   5462
   - Window:   1024
   - Frag ID:  0
   - Frag Off: 0
-  - Flags:    []
+  - Flags:    [A]
   - Data Len: 25 bytes
   - Data Str: "Teste com STTL da sessao."
 ------------------------------------------------
-Pacote de dados (seq=4418) enviado.
+Pacote de dados (seq=5462) enviado.
 Pacote enviado. Aguardando confirmação (ACK)...
-ACK recebido (acknum=4419). Pacotes em trânsito: 0
+ACK recebido (acknum=5463). Pacotes em trânsito: 0
 >>> Confirmação (ACK) para pacote simples recebida!
 ---[ STATUS REPORT ]---
   - Estado:         CONNECTED
   - Session STTL:   599
-  - Próximo SeqNum: 4419
+  - Próximo SeqNum: 5464
   - Pacotes sem ACK:0
 -----------------------
 
@@ -119,37 +129,38 @@ ACK recebido (acknum=4419). Pacotes em trânsito: 0
 
 --- ETAPA 3: Enviando dados para fragmentação ---
 ---[ Packet Details: Pacote DATA Fragmento 0 Saindo ]---
-  - SID:      2c7be1e4eac286fe8d1d2c8e05a38aee
+  - SID:      dab0a17f932f87c089f29782327bc63e
   - STTL:     599
-  - SeqNum:   4419
-  - AckNum:   4418
+  - SeqNum:   5464
+  - AckNum:   5463
   - Window:   1024
-  - Frag ID:  218
+  - Frag ID:  125
   - Frag Off: 0
-  - Flags:    [M]
+  - Flags:    [AM]
   - Data Len: 1440 bytes
   - Data Str: "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB..."
 ------------------------------------------------
 ---[ Packet Details: Pacote DATA Fragmento 1 Saindo ]---
-  - SID:      2c7be1e4eac286fe8d1d2c8e05a38aee
+  - SID:      dab0a17f932f87c089f29782327bc63e
   - STTL:     599
-  - SeqNum:   4420
-  - AckNum:   4418
+  - SeqNum:   5465
+  - AckNum:   5463
   - Window:   1024
-  - Frag ID:  218
+  - Frag ID:  125
   - Frag Off: 1
-  - Flags:    []
+  - Flags:    [A]
   - Data Len: 60 bytes
   - Data Str: "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB..."
 ------------------------------------------------
 Dados fragmentados enviados em 2 pacotes.
 Pacotes fragmentados enviados. Aguardando confirmações...
-ACK recebido (acknum=4421). Pacotes em trânsito: 0
+ACK recebido (acknum=5464). Pacotes em trânsito: 1
+ACK recebido (acknum=5465). Pacotes em trânsito: 0
 >>> Todas as confirmações (ACKs) para os fragmentos foram recebidas!
 ---[ STATUS REPORT ]---
   - Estado:         CONNECTED
   - Session STTL:   599
-  - Próximo SeqNum: 4421
+  - Próximo SeqNum: 5466
   - Pacotes sem ACK:0
 -----------------------
 
@@ -157,33 +168,22 @@ ACK recebido (acknum=4421). Pacotes em trânsito: 0
 
 --- ETAPA 4: Enviando pedido de desconexão ---
 ---[ Packet Details: Pacote DISCONNECT Saindo ]---
-  - SID:      00000000000000000000000000000000
-  - STTL:     0
-  - SeqNum:   0
-  - AckNum:   0
+  - SID:      dab0a17f932f87c089f29782327bc63e
+  - STTL:     599
+  - SeqNum:   5466
+  - AckNum:   5465
   - Window:   1024
   - Frag ID:  0
   - Frag Off: 0
-  - Flags:    [C]
+  - Flags:    [CRA]
   - Data Len: 0 bytes
 ------------------------------------------------
 Pacote de desconexão enviado. A sessão será encerrada.
 Aguardando finalização da sessão (timeout de 10s)...
-
-ERRO CRÍTICO: Pacote com SID inválido recebido durante a desconexão. Este é um comportamento esperado do Central em teste. Encerrando.
----[ Packet Details: Pacote Incorreto Recebido ]---
-  - SID:      adcf2c98eae08e85901929c20054fe0f
-  - STTL:     599
-  - SeqNum:   8174
-  - AckNum:   0
-  - Window:   1024
-  - Frag ID:  0
-  - Frag Off: 0
-  - Flags:    [A/R]
-  - Data Len: 0 bytes
-------------------------------------------------
->>> Sessão finalizada com sucesso (estado = DISCONNECTED).
+Desconexão confirmada pelo central (todos os pacotes foram confirmados).
+ACK recebido (acknum=0). Pacotes em trânsito: 0
 Loop da thread de rede encerrado.
+>>> Sessão finalizada com sucesso (estado = DISCONNECTED).
 
 >>> TESTE CONCLUÍDO <<<
 ```
