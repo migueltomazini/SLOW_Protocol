@@ -105,7 +105,6 @@ std::vector<uint8_t> SlowPacket::serialize() const {
     return raw_packet;
 }
 
-
 // --- Métodos de acesso (Setters e Getters) ---
 
 void SlowPacket::setSessionID(const std::array<uint8_t, 16>& id) {

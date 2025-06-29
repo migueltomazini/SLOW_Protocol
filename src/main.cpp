@@ -9,8 +9,8 @@
  * 2. Envio de um pacote de dados simples e espera pela confirmação (ACK).
  * 3. Envio de dados maiores para testar a funcionalidade de fragmentação.
  * 4. Envio de um pedido de desconexão para encerrar a sessão.
- * A interação do usuário foi removida em favor de esperas cronometradas para
- * criar um fluxo de teste contínuo e demonstrativo.
+ * O fluxo de teste é automatizado e utiliza esperas cronometradas para sincronizar
+ * as etapas, criando uma demonstração contínua.
  */
 
 #include "Peripheral.h"
@@ -161,7 +161,6 @@ int main(int argc, char* argv[]) {
         if (!disconnected_cleanly) {
             std::cerr << "\nAVISO: Timeout na desconexão. A thread de rede pode não ter sido encerrada corretamente." << std::endl;
         }
-
 
         if (network_thread.joinable()) {
             network_thread.join();

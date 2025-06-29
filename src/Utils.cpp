@@ -3,11 +3,10 @@
  * @brief Implementação de funções utilitárias para o protocolo SLOW.
  *
  * Este arquivo contém a implementação de funções auxiliares usadas na
- * manipulação de UUIDs, conversão entre formatos de endianness, inversão de bits
- * e depuração via impressão de dados em hexadecimal e informações de pacotes.
- * 
- * Tais funções são essenciais para garantir a interoperabilidade e
- * consistência na comunicação entre diferentes arquiteturas no protocolo SLOW.
+ * manipulação de UUIDs, conversão entre formatos de endianness e depuração
+ * via impressão de dados em hexadecimal e informações de pacotes.
+ * Tais funções são essenciais para garantir a interoperabilidade e consistência
+ * na comunicação entre diferentes arquiteturas no protocolo SLOW.
  */
 
 #include "Utils.h"
@@ -19,7 +18,7 @@
  * @brief Gera um UUID versão 8 (UUIDv8) conforme a RFC 9562.
  * 
  * A versão 8 permite o uso de dados arbitrários definidos pela aplicação.
- * Este UUID é preenchido com valores aleatórios.
+ * Este UUID é preenchido com valores aleatórios e usado para o Session ID.
  * 
  * @return std::array<uint8_t, 16> UUID v8 aleatório.
  */
@@ -43,7 +42,7 @@ std::array<uint8_t, 16> Utils::generateUUIDv8() {
 /**
  * @brief Gera um UUID nulo (todos os bytes iguais a zero).
  * 
- * Frequentemente usado para representar a ausência de UUID.
+ * Usado em pacotes de início de conexão para indicar uma nova sessão.
  * 
  * @return std::array<uint8_t, 16> UUID nulo.
  */
@@ -53,7 +52,6 @@ std::array<uint8_t, 16> Utils::generateNilUUID() {
 
 /**
  * @brief Converte um valor de 16 bits da ordem do host para little-endian.
- * 
  * @param host_val Valor na ordem do host.
  * @return uint16_t Valor convertido para little-endian.
  */
@@ -67,7 +65,6 @@ uint16_t Utils::hostToLittleEndian16(uint16_t host_val) {
 
 /**
  * @brief Converte um valor de 16 bits de little-endian para a ordem do host.
- * 
  * @param le_val Valor em little-endian.
  * @return uint16_t Valor convertido para a ordem do host.
  */
@@ -81,7 +78,6 @@ uint16_t Utils::littleEndianToHost16(uint16_t le_val) {
 
 /**
  * @brief Converte um valor de 32 bits da ordem do host para little-endian.
- * 
  * @param host_val Valor na ordem do host.
  * @return uint32_t Valor convertido para little-endian.
  */
@@ -98,7 +94,6 @@ uint32_t Utils::hostToLittleEndian32(uint32_t host_val) {
 
 /**
  * @brief Converte um valor de 32 bits de little-endian para a ordem do host.
- * 
  * @param le_val Valor em little-endian.
  * @return uint32_t Valor convertido para a ordem do host.
  */
@@ -114,21 +109,7 @@ uint32_t Utils::littleEndianToHost32(uint32_t le_val) {
 }
 
 /**
- * @brief Inverte os bits de um byte.
- * 
- * @param b Byte de entrada.
- * @return uint8_t Byte com bits invertidos.
- */
-uint8_t Utils::reverseBits(uint8_t b) {
-    b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
-    b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
-    b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
-    return b;
-}
-
-/**
  * @brief Imprime um vetor de bytes em formato hexadecimal.
- * 
  * @param data Vetor de bytes.
  * @param label Rótulo para identificar o dado impresso.
  */
@@ -146,7 +127,8 @@ void Utils::printHex(const std::vector<uint8_t>& data, const std::string& label)
 /**
  * @brief Imprime os detalhes de um pacote SLOW de forma estruturada.
  * 
- * Exibe session ID, campos de cabeçalho, flags ativas e uma prévia do payload.
+ * Exibe session ID, campos de cabeçalho, flags ativas e uma prévia do payload,
+ * sendo uma ferramenta útil para depuração.
  * 
  * @param packet Pacote SLOW a ser analisado.
  * @param label Rótulo identificador da impressão.

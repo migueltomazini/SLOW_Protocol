@@ -9,9 +9,10 @@
  * - Processar respostas do Central, como confirmações (ACKs).
  * - Gerenciar uma fila de pacotes não confirmados para retransmissão em caso de timeout.
  * - Iniciar o processo de desconexão.
- * A comunicação é multithread: a thread principal pode iniciar envios de dados,
- * enquanto uma thread de rede dedicada escuta continuamente por pacotes de entrada.
- * O acesso a recursos compartilhados, como a fila de retransmissão, é protegido por mutex.
+ * A classe é projetada para operar de forma assíncrona. Uma thread de rede dedicada
+ * executa o método `run()` para receber pacotes e gerenciar retransmissões, enquanto
+ * outros métodos são chamados para iniciar o envio de dados. O acesso a recursos
+ * compartilhados, como a fila de retransmissão, é protegido por mutex.
  */
 
 #include "Peripheral.h"
@@ -55,10 +56,10 @@ bool Peripheral::start() {
         return false;
     }
     
-    // Define um timeout de 100ms para a chamada de recebimento no socket.
+    // Define um timeout para a chamada de recebimento no socket.
     // Isso permite que o loop da thread de rede não bloqueie indefinidamente,
     // podendo verificar outras lógicas, como a de retransmissão.
-    if (!udp_socket.setReceiveTimeout(0, 100000)) {
+    if (!udp_socket.setReceiveTimeout(0, 100000)) { // 100ms
         std::cerr << "Falha ao configurar timeout do socket." << std::endl;
         return false;
     }
@@ -145,9 +146,9 @@ bool Peripheral::sendData(const std::vector<uint8_t>& data_payload) {
 
 /**
  * @brief Envia um pacote de desconexão para o Central.
- * @note Com base em depuração empírica, o Central espera um pacote com SID, STTL, Seqnum e Acknum zerados,
- *       e apenas a flag CONNECT ligada. A resposta do Central a este pacote não é um ACK válido e é ignorada.
- *       Esta função efetivamente sinaliza o término da sessão do lado do periférico.
+ * @note O pacote é configurado com flags específicas (CONNECT, REVIVE, ACK) e os
+ *       dados da sessão para sinalizar o encerramento da conexão. Esta função
+ *       inicia a transição para o estado de desconexão no lado do periférico.
  * @return true se o pacote foi enviado, false se a conexão não estava ativa.
  */
 bool Peripheral::sendDisconnect() {
@@ -156,7 +157,6 @@ bool Peripheral::sendDisconnect() {
     current_state = DISCONNECTING;
     SlowPacket disconnect_packet;
     
-    // Configuração específica para o pacote de disconnect, descoberta via testes.
     disconnect_packet.setSessionID(session_id);
     disconnect_packet.header.setSttl(session_sttl);
     disconnect_packet.setSequenceNumber(current_seqnum++);
@@ -241,11 +241,9 @@ void Peripheral::processReceivedPacket(const std::vector<uint8_t>& raw_packet) {
             break;
         
         case DISCONNECTING:
-            // *** Tratamento especial para o problema do Central ***
-            // Se um pacote com SID incorreto for recebido aqui, é o erro que queremos
-            // capturar. Forçamos o encerramento da aplicação.
+            // Durante a desconexão, um pacote com SID diferente do esperado é um erro.
             if (packet.getSessionID() != session_id) {
-                std::cerr << "\nERRO CRÍTICO: Pacote com SID inválido recebido durante a desconexão. " << std::endl;
+                std::cerr << "\nERRO CRÍTICO: Pacote com SID inválido recebido durante a desconexão." << std::endl;
                 Utils::printPacketDetails(packet, "Pacote Incorreto Recebido");
                 current_state = DISCONNECTED;
                 // Limpa pacotes não confirmados para garantir que o loop run() termine.
@@ -315,8 +313,7 @@ void Peripheral::handleAckResponse(const SlowPacket& packet) {
 
     {
         std::lock_guard<std::mutex> lock(unacked_packets_mtx);
-        // Remove todos os pacotes com número de sequência menor que o acknum recebido.
-        // O protocolo SLOW usa ACK cumulativo, então um ACK para N confirma todos os pacotes < N.
+        // O protocolo SLOW usa ACK cumulativo, então um ACK para N confirma todos os pacotes <= N.
         unacked_packets.erase(
             std::remove_if(unacked_packets.begin(), unacked_packets.end(),
                            [acknum](const auto& unacked) {
@@ -339,8 +336,8 @@ void Peripheral::handleAckResponse(const SlowPacket& packet) {
  * @brief Verifica a fila de pacotes não confirmados e retransmite aqueles cujo timeout expirou.
  */
 void Peripheral::handleRetransmission() {
-    // É necessário criar uma cópia dos pacotes a serem retransmitidos fora do lock
-    // para evitar chamar uma função de rede (sendTo) dentro de uma seção crítica.
+    // Cria uma cópia dos pacotes a serem retransmitidos fora do lock para evitar
+    // chamar uma função de rede (sendTo) dentro de uma seção crítica.
     std::vector<SlowPacket> packets_to_retransmit;
     
     {
@@ -395,7 +392,7 @@ size_t Peripheral::getUnackedPacketCount() const {
 
 /**
  * @brief Constrói e envia um pacote de conexão para o Central.
- * @return true.
+ * @return true se o envio foi iniciado, false se já estava em outro estado.
  */
 bool Peripheral::sendConnect() {
     if (current_state != DISCONNECTED) {

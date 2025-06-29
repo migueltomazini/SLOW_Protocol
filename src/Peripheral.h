@@ -79,10 +79,9 @@ private:
     uint16_t remote_window_size;
     uint16_t local_window_size;
 
-    // Fila de retransmissão e buffer de fragmentação
+    // Fila de retransmissão
     std::vector<UnackedPacketInfo> unacked_packets;
     mutable std::mutex unacked_packets_mtx; 
-    std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t>>> fragmented_data_buffer;
 };
 
 #endif

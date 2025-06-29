@@ -32,7 +32,7 @@ bool UdpSocket::bindSocket(int port) {
     memset(&local_addr, 0, sizeof(local_addr));
     local_addr.sin_family = AF_INET;
     local_addr.sin_addr.s_addr = INADDR_ANY; // Aceita pacotes de qualquer interface local
-    local_addr.sin_port = htons(port); // `port = 0` para porta efêmera
+    local_addr.sin_port = htons(port);       // 'port = 0' seleciona uma porta efêmera
 
     if (bind(sockfd, (struct sockaddr *)&local_addr, sizeof(local_addr)) < 0) {
         perror("Erro ao fazer bind do socket");
